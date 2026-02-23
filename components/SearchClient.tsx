@@ -1,7 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { shouldApplyResponse } from '@/lib/requestGuard';
 import type { SearchResponse } from '@/lib/types';
 
 function CardThumb({ src, alt }: { src: string; alt: string }) {
@@ -17,6 +18,7 @@ export default function SearchClient() {
   const [data, setData] = useState<SearchResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const requestSequenceRef = useRef(0);
 
   const debouncedQuery = useMemo(() => query.trim(), [query]);
 
@@ -24,29 +26,50 @@ export default function SearchClient() {
     if (!debouncedQuery) {
       setData(null);
       setError(null);
+      setLoading(false);
       return;
     }
+
+    const requestId = ++requestSequenceRef.current;
+    const controller = new AbortController();
 
     const timer = setTimeout(async () => {
       setLoading(true);
       setError(null);
+
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(debouncedQuery)}`);
+        const res = await fetch(`/api/search?q=${encodeURIComponent(debouncedQuery)}`, {
+          signal: controller.signal,
+        });
         const json = await res.json();
 
         if (!res.ok) {
           throw new Error(json.error ?? 'Search failed');
         }
 
-        setData(json as SearchResponse);
+        if (shouldApplyResponse(requestId, requestSequenceRef.current)) {
+          setData(json as SearchResponse);
+        }
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Unknown error');
+        if (e instanceof DOMException && e.name === 'AbortError') {
+          return;
+        }
+
+        if (shouldApplyResponse(requestId, requestSequenceRef.current)) {
+          setData(null);
+          setError(e instanceof Error ? e.message : 'Unknown error');
+        }
       } finally {
-        setLoading(false);
+        if (shouldApplyResponse(requestId, requestSequenceRef.current)) {
+          setLoading(false);
+        }
       }
     }, 350);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [debouncedQuery]);
 
   return (

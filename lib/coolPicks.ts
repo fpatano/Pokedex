@@ -1,5 +1,9 @@
 import type { NormalizedCard } from './types';
 
+type PickCoolCardsOptions = {
+  excludedIds?: string[];
+};
+
 function scoreCard(card: NormalizedCard, query: string): number {
   const q = query.toLowerCase();
   let score = 0;
@@ -13,13 +17,16 @@ function scoreCard(card: NormalizedCard, query: string): number {
   return score;
 }
 
-export function pickCoolCards(cards: NormalizedCard[], query: string): NormalizedCard[] {
+export function pickCoolCards(cards: NormalizedCard[], query: string, options: PickCoolCardsOptions = {}): NormalizedCard[] {
   const uniqueById = new Map<string, NormalizedCard>();
   for (const card of cards) {
     if (!uniqueById.has(card.id)) uniqueById.set(card.id, card);
   }
 
+  const excludedIds = new Set(options.excludedIds ?? []);
+
   return [...uniqueById.values()]
+    .filter((card) => !excludedIds.has(card.id))
     .sort((a, b) => scoreCard(b, query) - scoreCard(a, query))
     .slice(0, 3);
 }
