@@ -12,6 +12,14 @@ const TYPE_TOKENS = [
   'colorless'
 ];
 
+const ATTACK_DAMAGE_INTENT_PATTERNS = [
+  /highest\s+damage/i,
+  /largest\s+attack/i,
+  /max(?:imum)?\s+damage/i,
+  /strongest\s+attack/i,
+  /most\s+damage/i,
+];
+
 export function buildPokemonTcgQuery(input: string): string {
   const query = input.trim().toLowerCase();
   if (!query) return '*';
@@ -41,5 +49,12 @@ export function buildPokemonTcgQuery(input: string): string {
     clauses.push(`abilities.text:*${token}*`);
   }
 
-  return clauses.join(' OR ');
+  const baseQuery = clauses.join(' OR ');
+  const wantsAttackDamageRanking = ATTACK_DAMAGE_INTENT_PATTERNS.some((pattern) => pattern.test(input));
+
+  if (!wantsAttackDamageRanking) {
+    return baseQuery;
+  }
+
+  return `(${baseQuery}) AND supertype:pokemon AND attacks.name:*`;
 }

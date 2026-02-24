@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { buildPokemonTcgQuery } from './queryParser';
 import { normalizeCard } from './normalize';
 import { pickCoolCards } from './coolPicks';
+import { analyzeQueryIntent, rerankCardsForQuery } from './searchRanking';
 import type { SearchResponse, NormalizedCard } from './types';
 
 const COOL_PICKS_PRIMARY_EXCLUSION_COUNT = 8;
@@ -367,10 +368,31 @@ async function tcgdexFetchJson(url: string, config: ProviderRuntimeConfig): Prom
 }
 
 async function fetchFromTcgdex(userQuery: string, config: ProviderRuntimeConfig): Promise<NormalizedCard[]> {
+  const intent = analyzeQueryIntent(userQuery);
   const terms = buildTcgdexTerms(userQuery);
   const ids = new Set<string>();
 
+  if (intent.wantsAttackDamageRanking && intent.requiredTypes.length > 0) {
+    for (const requiredType of intent.requiredTypes) {
+      const tcgdexType = requiredType[0].toUpperCase() + requiredType.slice(1);
+      const listJson = await tcgdexFetchJson(
+        `https://api.tcgdex.net/v2/en/cards?types=${encodeURIComponent(tcgdexType)}&category=Pokemon`,
+        config
+      );
+      const list = tcgdexCardListSchema.parse(listJson);
+
+      for (const card of list) {
+        ids.add(card.id);
+        if (ids.size >= MAX_RESULTS) break;
+      }
+
+      if (ids.size >= MAX_RESULTS) break;
+    }
+  }
+
   for (const term of terms) {
+    if (ids.size >= MAX_RESULTS) break;
+
     const listJson = await tcgdexFetchJson(`https://api.tcgdex.net/v2/en/cards?name=${encodeURIComponent(term)}`, config);
     const list = tcgdexCardListSchema.parse(listJson);
 
@@ -378,8 +400,6 @@ async function fetchFromTcgdex(userQuery: string, config: ProviderRuntimeConfig)
       ids.add(card.id);
       if (ids.size >= MAX_RESULTS) break;
     }
-
-    if (ids.size >= MAX_RESULTS) break;
   }
 
   if (ids.size === 0) {
@@ -435,15 +455,16 @@ export async function searchCards(userQuery: string): Promise<SearchResponse> {
 
     try {
       const results = provider === 'tcgdex' ? await fetchFromTcgdex(userQuery, config) : await fetchFromPokemonTcg(userQuery, config);
+      const rankedResults = rerankCardsForQuery(results, userQuery);
       if (isFallback) {
         markFallbackSuccess();
       }
 
       return {
         query: userQuery,
-        results,
-        coolPicks: pickCoolCards(results, userQuery, {
-          excludedIds: results.slice(0, COOL_PICKS_PRIMARY_EXCLUSION_COUNT).map((card) => card.id),
+        results: rankedResults,
+        coolPicks: pickCoolCards(rankedResults, userQuery, {
+          excludedIds: rankedResults.slice(0, COOL_PICKS_PRIMARY_EXCLUSION_COUNT).map((card) => card.id),
         }),
       };
     } catch (error) {
