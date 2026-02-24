@@ -120,7 +120,7 @@ async function fetchFromPokemonTcg(userQuery: string): Promise<NormalizedCard[]>
     clearTimeout(timeout);
   }
 
-  debugLog('Primary provider response', {
+  debugLog('Fallback provider response', {
     provider: 'pokemontcg',
     status: res.status,
     query: userQuery,
@@ -178,7 +178,7 @@ async function tcgdexFetchJson(url: string): Promise<unknown> {
       signal: controller.signal,
     });
 
-    debugLog('Fallback provider response', {
+    debugLog('Primary provider response', {
       provider: 'tcgdex',
       status: res.status,
       url,
@@ -240,24 +240,28 @@ export async function searchCards(userQuery: string): Promise<SearchResponse> {
   let results: NormalizedCard[] = [];
 
   try {
-    results = await fetchFromPokemonTcg(userQuery);
+    results = await fetchFromTcgdex(userQuery);
     debugLog('Search completed with primary provider', {
-      provider: 'pokemontcg',
+      provider: 'tcgdex',
       resultCount: results.length,
       query: userQuery,
     });
   } catch (primaryError) {
     debugLog('Primary provider failed, trying fallback', {
-      provider: 'pokemontcg',
+      provider: 'tcgdex',
       query: userQuery,
       error: primaryError instanceof Error ? primaryError.message : String(primaryError),
       status: primaryError instanceof PokemonApiError ? primaryError.status : undefined,
       code: primaryError instanceof PokemonApiError ? primaryError.code : undefined,
     });
 
-    results = await fetchFromTcgdex(userQuery);
+    if (!process.env.POKEMON_TCG_API_KEY) {
+      throw primaryError;
+    }
+
+    results = await fetchFromPokemonTcg(userQuery);
     debugLog('Search completed with fallback provider', {
-      provider: 'tcgdex',
+      provider: 'pokemontcg',
       resultCount: results.length,
       query: userQuery,
     });
