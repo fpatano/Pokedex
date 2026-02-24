@@ -7,6 +7,8 @@ A practical MVP web app for Pokémon TCG card discovery.
 - Next.js + TypeScript + Tailwind UI
 - Search endpoint at `GET /api/search?q=...`
 - Server-side Pokémon TCG API integration (`POKEMON_TCG_API_KEY`)
+- Automatic fallback to TCGdex when Pokémon TCG API is unavailable in the runtime environment
+- Optional provider diagnostics via `POKEMON_API_DEBUG=1`
 - Trait-oriented free-text query parser (types, ability/attack keywords, numeric cues, name text)
 - Normalized card response shape for UI
 - In-memory TTL cache (60s) for repeated search queries
@@ -45,6 +47,7 @@ Open `http://localhost:3000`.
 - `npm run start` - serve production build
 - `npm run lint` - run ESLint
 - `npm run test` - run Vitest test suite
+- `npm run verify:live` - boots local app and proves live `/api/search` responses + max-attack candidate extraction
 
 ## API Response Shape
 
