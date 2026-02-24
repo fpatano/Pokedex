@@ -54,8 +54,16 @@ Open: `http://localhost:3000`
 
 | Variable | Required | Default | Purpose |
 |---|---|---|---|
-| `POKEMON_TCG_API_KEY` | Optional | unset | Enables fallback to Pokémon TCG API if TCGdex fails. If unset, no fallback is attempted. |
-| `POKEMON_API_DEBUG` | Optional | `0` | Set to `1`/`true` to log provider diagnostics on server. |
+| `CARD_PROVIDER_PRIMARY` | Optional | `tcgdex` | Primary search provider (`tcgdex` or `pokemontcg`). |
+| `ENABLE_POKEMONTCG_FALLBACK` | Optional | `0` | Enables Pokémon TCG fallback when primary is `tcgdex`. |
+| `POKEMON_TCG_API_KEY` | Optional | unset | Required only when Pokémon TCG provider is used (primary or fallback). |
+| `TCGDEX_TIMEOUT_MS` | Optional | `10000` | Timeout for TCGdex requests. |
+| `POKEMON_TCG_TIMEOUT_MS` | Optional | `7000` | Timeout for Pokémon TCG requests. |
+| `PROVIDER_MAX_RETRIES` | Optional | `2` | Retries for transient provider failures. |
+| `PROVIDER_FALLBACK_FAILURE_THRESHOLD` | Optional | `3` | Consecutive fallback failures before temporary suppression. |
+| `PROVIDER_FALLBACK_SUPPRESS_MS` | Optional | `60000` | Suppression window for failing fallback path. |
+| `PROVIDER_CACHE_TTL_MS` | Optional | `60000` | In-memory provider response cache TTL. |
+| `POKEMON_API_DEBUG` | Optional | `0` | Set to `1`/`true` to log provider diagnostics (provider/status/latency/retries). |
 
 > This app does **not** use mock/fake card data. Responses come from live upstream APIs.
 
@@ -95,8 +103,9 @@ The script validates:
   - Maps upstream failures to stable HTTP errors
 
 - **Search Service:** `lib/pokemonApi.ts`
-  - Tries TCGdex first
-  - Falls back to Pokémon TCG API only when `POKEMON_TCG_API_KEY` is set
+  - Uses explicit provider policy (`CARD_PROVIDER_PRIMARY`, optional fallback flag)
+  - Applies retries (bounded backoff+jitter), request timeouts, and fallback suppression after repeated failures
+  - Uses small in-memory provider cache to reduce repeated upstream fetches
   - Normalizes both provider payloads to one internal card type
 
 - **Support libs:**

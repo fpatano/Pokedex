@@ -4,8 +4,6 @@ import { normalizeCard } from './normalize';
 import { pickCoolCards } from './coolPicks';
 import type { SearchResponse, NormalizedCard } from './types';
 
-const UPSTREAM_TIMEOUT_MS = 7000;
-const TCGDEX_TIMEOUT_MS = 10000;
 const COOL_PICKS_PRIMARY_EXCLUSION_COUNT = 8;
 const MAX_RESULTS = 24;
 
@@ -23,7 +21,7 @@ function debugLog(message: string, meta?: Record<string, unknown>) {
 }
 
 export class PokemonApiError extends Error {
-  code: 'TIMEOUT' | 'UPSTREAM' | 'INVALID_RESPONSE' | 'MISCONFIGURED';
+  code: 'TIMEOUT' | 'UPSTREAM' | 'INVALID_RESPONSE' | 'MISCONFIGURED' | 'NO_PROVIDER_AVAILABLE';
   status?: number;
 
   constructor(code: PokemonApiError['code'], message: string, status?: number) {
@@ -32,6 +30,149 @@ export class PokemonApiError extends Error {
     this.code = code;
     this.status = status;
   }
+}
+
+type ProviderName = 'tcgdex' | 'pokemontcg';
+
+type ProviderPolicy = {
+  primary: ProviderName;
+  fallbacks: ProviderName[];
+};
+
+type ProviderRuntimeConfig = {
+  tcgdexTimeoutMs: number;
+  pokemonTcgTimeoutMs: number;
+  maxRetries: number;
+  baseRetryDelayMs: number;
+  maxRetryDelayMs: number;
+  fallbackFailureThreshold: number;
+  fallbackSuppressMs: number;
+  providerCacheTtlMs: number;
+};
+
+type RetryContext = {
+  provider: ProviderName;
+  endpoint: string;
+};
+
+const providerCache = new Map<string, { expiresAt: number; value: unknown }>();
+
+const fallbackCircuit = {
+  failures: 0,
+  suppressUntil: 0,
+};
+
+function parseNumberEnv(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const value = Number(raw);
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+function parseBooleanEnv(name: string, fallback = false): boolean {
+  const raw = process.env[name];
+  if (raw == null) return fallback;
+  return /^(1|true|yes|on)$/i.test(raw);
+}
+
+function getRuntimeConfig(): ProviderRuntimeConfig {
+  return {
+    tcgdexTimeoutMs: parseNumberEnv('TCGDEX_TIMEOUT_MS', 10_000),
+    pokemonTcgTimeoutMs: parseNumberEnv('POKEMON_TCG_TIMEOUT_MS', 7_000),
+    maxRetries: parseNumberEnv('PROVIDER_MAX_RETRIES', 2),
+    baseRetryDelayMs: parseNumberEnv('PROVIDER_RETRY_BASE_DELAY_MS', 200),
+    maxRetryDelayMs: parseNumberEnv('PROVIDER_RETRY_MAX_DELAY_MS', 1_500),
+    fallbackFailureThreshold: parseNumberEnv('PROVIDER_FALLBACK_FAILURE_THRESHOLD', 3),
+    fallbackSuppressMs: parseNumberEnv('PROVIDER_FALLBACK_SUPPRESS_MS', 60_000),
+    providerCacheTtlMs: parseNumberEnv('PROVIDER_CACHE_TTL_MS', 60_000),
+  };
+}
+
+export function getProviderPolicy(): ProviderPolicy {
+  const primaryRaw = (process.env.CARD_PROVIDER_PRIMARY ?? 'tcgdex').toLowerCase();
+  const primary: ProviderName = primaryRaw === 'pokemontcg' ? 'pokemontcg' : 'tcgdex';
+
+  const fallbacks: ProviderName[] = [];
+  if (primary !== 'pokemontcg' && parseBooleanEnv('ENABLE_POKEMONTCG_FALLBACK', false)) {
+    fallbacks.push('pokemontcg');
+  }
+
+  return { primary, fallbacks };
+}
+
+function withTimeoutSignal(timeoutMs: number): { controller: AbortController; timeout: NodeJS.Timeout } {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  return { controller, timeout };
+}
+
+function backoffDelay(attempt: number, config: ProviderRuntimeConfig): number {
+  const exp = config.baseRetryDelayMs * 2 ** attempt;
+  const jitter = Math.floor(Math.random() * Math.max(50, config.baseRetryDelayMs));
+  return Math.min(config.maxRetryDelayMs, exp + jitter);
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRetryableStatus(status?: number): boolean {
+  return status === 408 || status === 429 || (status != null && status >= 500);
+}
+
+export function isRetryableError(error: unknown): boolean {
+  if (!(error instanceof PokemonApiError)) return false;
+  if (error.code === 'TIMEOUT') return true;
+  if (error.code !== 'UPSTREAM') return false;
+  return isRetryableStatus(error.status);
+}
+
+async function withRetries<T>(ctx: RetryContext, fn: () => Promise<T>, config: ProviderRuntimeConfig): Promise<{ value: T; retriesUsed: number }> {
+  let attempt = 0;
+  let lastError: unknown;
+
+  while (attempt <= config.maxRetries) {
+    try {
+      const value = await fn();
+      return { value, retriesUsed: attempt };
+    } catch (error) {
+      lastError = error;
+      if (attempt >= config.maxRetries || !isRetryableError(error)) {
+        throw error;
+      }
+
+      const delayMs = backoffDelay(attempt, config);
+      debugLog('Retrying provider request', {
+        provider: ctx.provider,
+        endpoint: ctx.endpoint,
+        attempt: attempt + 1,
+        maxRetries: config.maxRetries,
+        delayMs,
+        reason: error instanceof Error ? error.message : String(error),
+      });
+      await sleep(delayMs);
+      attempt += 1;
+    }
+  }
+
+  throw lastError;
+}
+
+function getProviderCache<T>(key: string): T | null {
+  const hit = providerCache.get(key);
+  if (!hit) return null;
+  if (Date.now() > hit.expiresAt) {
+    providerCache.delete(key);
+    return null;
+  }
+  return hit.value as T;
+}
+
+function setProviderCache(key: string, value: unknown, ttlMs: number): void {
+  providerCache.set(key, {
+    expiresAt: Date.now() + ttlMs,
+    value,
+  });
 }
 
 const pokemonTcgSchema = z.object({
@@ -84,60 +225,66 @@ const tcgdexCardSchema = z.object({
     .optional(),
 });
 
-function withTimeoutSignal(timeoutMs: number): { controller: AbortController; timeout: NodeJS.Timeout } {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  return { controller, timeout };
-}
-
-async function fetchFromPokemonTcg(userQuery: string): Promise<NormalizedCard[]> {
+async function fetchFromPokemonTcg(userQuery: string, config: ProviderRuntimeConfig): Promise<NormalizedCard[]> {
   const apiKey = process.env.POKEMON_TCG_API_KEY;
   if (!apiKey) {
-    throw new PokemonApiError('MISCONFIGURED', 'Server missing Pokémon API configuration');
+    throw new PokemonApiError('MISCONFIGURED', 'Pokémon TCG fallback is enabled but POKEMON_TCG_API_KEY is missing');
   }
 
   const q = buildPokemonTcgQuery(userQuery);
   const url = `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(q)}&pageSize=${MAX_RESULTS}`;
 
-  const { controller, timeout } = withTimeoutSignal(UPSTREAM_TIMEOUT_MS);
-  let res: Response;
+  const result = await withRetries(
+    { provider: 'pokemontcg', endpoint: '/v2/cards' },
+    async () => {
+      const { controller, timeout } = withTimeoutSignal(config.pokemonTcgTimeoutMs);
+      const start = Date.now();
+      try {
+        const res = await fetch(url, {
+          headers: {
+            'X-Api-Key': apiKey,
+          },
+          next: { revalidate: 0 },
+          signal: controller.signal,
+        });
 
-  try {
-    res = await fetch(url, {
-      headers: {
-        'X-Api-Key': apiKey,
-      },
-      next: { revalidate: 0 },
-      signal: controller.signal,
-    });
-  } catch (error) {
-    if (error instanceof DOMException && error.name === 'AbortError') {
-      throw new PokemonApiError('TIMEOUT', 'Pokémon API timed out, please try again');
-    }
+        const latencyMs = Date.now() - start;
+        debugLog('Provider telemetry', { provider: 'pokemontcg', status: res.status, latencyMs, query: userQuery });
 
-    throw new PokemonApiError('UPSTREAM', 'Pokémon API request failed');
-  } finally {
-    clearTimeout(timeout);
-  }
+        if (!res.ok) {
+          throw new PokemonApiError('UPSTREAM', `Pokemon TCG API error: ${res.status}`, res.status);
+        }
 
-  debugLog('Fallback provider response', {
+        return pokemonTcgSchema.parse(await res.json());
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          throw new PokemonApiError('TIMEOUT', 'Pokémon API timed out, please try again');
+        }
+
+        if (error instanceof PokemonApiError) {
+          throw error;
+        }
+
+        if (error instanceof z.ZodError) {
+          throw new PokemonApiError('INVALID_RESPONSE', 'Pokémon API returned invalid data');
+        }
+
+        throw new PokemonApiError('UPSTREAM', 'Pokémon API request failed');
+      } finally {
+        clearTimeout(timeout);
+      }
+    },
+    config
+  );
+
+  debugLog('Provider completed', {
     provider: 'pokemontcg',
-    status: res.status,
     query: userQuery,
+    retriesUsed: result.retriesUsed,
+    resultCount: result.value.data.length,
   });
 
-  if (!res.ok) {
-    throw new PokemonApiError('UPSTREAM', `Pokemon TCG API error: ${res.status}`, res.status);
-  }
-
-  let payload: z.infer<typeof pokemonTcgSchema>;
-  try {
-    payload = pokemonTcgSchema.parse(await res.json());
-  } catch {
-    throw new PokemonApiError('INVALID_RESPONSE', 'Pokémon API returned invalid data');
-  }
-
-  return payload.data.map(normalizeCard);
+  return result.value.data.map(normalizeCard);
 }
 
 function normalizeTcgdexCard(card: z.infer<typeof tcgdexCardSchema>): NormalizedCard {
@@ -170,46 +317,61 @@ function buildTcgdexTerms(input: string): string[] {
   return [...new Set([input.trim(), ...important])].filter(Boolean);
 }
 
-async function tcgdexFetchJson(url: string): Promise<unknown> {
-  const { controller, timeout } = withTimeoutSignal(TCGDEX_TIMEOUT_MS);
-  try {
-    const res = await fetch(url, {
-      next: { revalidate: 0 },
-      signal: controller.signal,
-    });
-
-    debugLog('Primary provider response', {
-      provider: 'tcgdex',
-      status: res.status,
-      url,
-    });
-
-    if (!res.ok) {
-      throw new PokemonApiError('UPSTREAM', `TCGdex API error: ${res.status}`, res.status);
-    }
-
-    return await res.json();
-  } catch (error) {
-    if (error instanceof DOMException && error.name === 'AbortError') {
-      throw new PokemonApiError('TIMEOUT', 'TCGdex API timed out, please try again');
-    }
-
-    if (error instanceof PokemonApiError) {
-      throw error;
-    }
-
-    throw new PokemonApiError('UPSTREAM', 'TCGdex API request failed');
-  } finally {
-    clearTimeout(timeout);
+async function tcgdexFetchJson(url: string, config: ProviderRuntimeConfig): Promise<unknown> {
+  const cacheKey = `tcgdex:${url}`;
+  const cached = getProviderCache<unknown>(cacheKey);
+  if (cached) {
+    debugLog('Provider cache hit', { provider: 'tcgdex', url });
+    return cached;
   }
+
+  const result = await withRetries(
+    { provider: 'tcgdex', endpoint: url },
+    async () => {
+      const { controller, timeout } = withTimeoutSignal(config.tcgdexTimeoutMs);
+      const start = Date.now();
+      try {
+        const res = await fetch(url, {
+          next: { revalidate: 0 },
+          signal: controller.signal,
+        });
+
+        const latencyMs = Date.now() - start;
+        debugLog('Provider telemetry', { provider: 'tcgdex', status: res.status, latencyMs, url });
+
+        if (!res.ok) {
+          throw new PokemonApiError('UPSTREAM', `TCGdex API error: ${res.status}`, res.status);
+        }
+
+        return await res.json();
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          throw new PokemonApiError('TIMEOUT', 'TCGdex API timed out, please try again');
+        }
+
+        if (error instanceof PokemonApiError) {
+          throw error;
+        }
+
+        throw new PokemonApiError('UPSTREAM', 'TCGdex API request failed');
+      } finally {
+        clearTimeout(timeout);
+      }
+    },
+    config
+  );
+
+  debugLog('Provider completed', { provider: 'tcgdex', url, retriesUsed: result.retriesUsed });
+  setProviderCache(cacheKey, result.value, config.providerCacheTtlMs);
+  return result.value;
 }
 
-async function fetchFromTcgdex(userQuery: string): Promise<NormalizedCard[]> {
+async function fetchFromTcgdex(userQuery: string, config: ProviderRuntimeConfig): Promise<NormalizedCard[]> {
   const terms = buildTcgdexTerms(userQuery);
   const ids = new Set<string>();
 
   for (const term of terms) {
-    const listJson = await tcgdexFetchJson(`https://api.tcgdex.net/v2/en/cards?name=${encodeURIComponent(term)}`);
+    const listJson = await tcgdexFetchJson(`https://api.tcgdex.net/v2/en/cards?name=${encodeURIComponent(term)}`, config);
     const list = tcgdexCardListSchema.parse(listJson);
 
     for (const card of list) {
@@ -221,14 +383,14 @@ async function fetchFromTcgdex(userQuery: string): Promise<NormalizedCard[]> {
   }
 
   if (ids.size === 0) {
-    const allJson = await tcgdexFetchJson('https://api.tcgdex.net/v2/en/cards');
+    const allJson = await tcgdexFetchJson('https://api.tcgdex.net/v2/en/cards', config);
     const all = tcgdexCardListSchema.parse(allJson);
     all.slice(0, MAX_RESULTS).forEach((card) => ids.add(card.id));
   }
 
   const cards = await Promise.all(
     [...ids].slice(0, MAX_RESULTS).map(async (id) => {
-      const cardJson = await tcgdexFetchJson(`https://api.tcgdex.net/v2/en/cards/${id}`);
+      const cardJson = await tcgdexFetchJson(`https://api.tcgdex.net/v2/en/cards/${id}`, config);
       return tcgdexCardSchema.parse(cardJson);
     })
   );
@@ -236,42 +398,79 @@ async function fetchFromTcgdex(userQuery: string): Promise<NormalizedCard[]> {
   return cards.map(normalizeTcgdexCard);
 }
 
+function markFallbackFailure(config: ProviderRuntimeConfig): void {
+  fallbackCircuit.failures += 1;
+  if (fallbackCircuit.failures >= config.fallbackFailureThreshold) {
+    fallbackCircuit.suppressUntil = Date.now() + config.fallbackSuppressMs;
+  }
+}
+
+function markFallbackSuccess(): void {
+  fallbackCircuit.failures = 0;
+  fallbackCircuit.suppressUntil = 0;
+}
+
+function canUseFallback(): boolean {
+  return Date.now() >= fallbackCircuit.suppressUntil;
+}
+
 export async function searchCards(userQuery: string): Promise<SearchResponse> {
-  let results: NormalizedCard[] = [];
+  const policy = getProviderPolicy();
+  const config = getRuntimeConfig();
+  const providers: ProviderName[] = [policy.primary, ...policy.fallbacks.filter((provider) => provider !== policy.primary)];
 
-  try {
-    results = await fetchFromTcgdex(userQuery);
-    debugLog('Search completed with primary provider', {
-      provider: 'tcgdex',
-      resultCount: results.length,
-      query: userQuery,
-    });
-  } catch (primaryError) {
-    debugLog('Primary provider failed, trying fallback', {
-      provider: 'tcgdex',
-      query: userQuery,
-      error: primaryError instanceof Error ? primaryError.message : String(primaryError),
-      status: primaryError instanceof PokemonApiError ? primaryError.status : undefined,
-      code: primaryError instanceof PokemonApiError ? primaryError.code : undefined,
-    });
+  let lastError: unknown = new PokemonApiError('NO_PROVIDER_AVAILABLE', 'No provider was attempted');
 
-    if (!process.env.POKEMON_TCG_API_KEY) {
-      throw primaryError;
+  for (let index = 0; index < providers.length; index += 1) {
+    const provider = providers[index];
+    const isFallback = index > 0;
+
+    if (isFallback && !canUseFallback()) {
+      debugLog('Fallback temporarily suppressed by circuit', {
+        provider,
+        suppressUntil: fallbackCircuit.suppressUntil,
+      });
+      continue;
     }
 
-    results = await fetchFromPokemonTcg(userQuery);
-    debugLog('Search completed with fallback provider', {
-      provider: 'pokemontcg',
-      resultCount: results.length,
-      query: userQuery,
-    });
+    try {
+      const results = provider === 'tcgdex' ? await fetchFromTcgdex(userQuery, config) : await fetchFromPokemonTcg(userQuery, config);
+      if (isFallback) {
+        markFallbackSuccess();
+      }
+
+      return {
+        query: userQuery,
+        results,
+        coolPicks: pickCoolCards(results, userQuery, {
+          excludedIds: results.slice(0, COOL_PICKS_PRIMARY_EXCLUSION_COUNT).map((card) => card.id),
+        }),
+      };
+    } catch (error) {
+      lastError = error;
+
+      if (isFallback) {
+        markFallbackFailure(config);
+      }
+
+      debugLog('Provider failed', {
+        provider,
+        query: userQuery,
+        fallback: isFallback,
+        error: error instanceof Error ? error.message : String(error),
+        code: error instanceof PokemonApiError ? error.code : undefined,
+        status: error instanceof PokemonApiError ? error.status : undefined,
+      });
+    }
   }
 
-  return {
-    query: userQuery,
-    results,
-    coolPicks: pickCoolCards(results, userQuery, {
-      excludedIds: results.slice(0, COOL_PICKS_PRIMARY_EXCLUSION_COUNT).map((card) => card.id),
-    }),
-  };
+  if (policy.fallbacks.length > 0 && !canUseFallback()) {
+    throw new PokemonApiError('UPSTREAM', 'Fallback provider temporarily suppressed after repeated failures');
+  }
+
+  if (lastError instanceof PokemonApiError) {
+    throw lastError;
+  }
+
+  throw new PokemonApiError('UPSTREAM', 'No provider could satisfy this request');
 }
