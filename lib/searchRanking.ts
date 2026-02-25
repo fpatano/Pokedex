@@ -1,19 +1,5 @@
+import { analyzeQueryIntent } from './queryIntent';
 import type { NormalizedCard } from './types';
-
-type QueryIntent = {
-  wantsAttackDamageRanking: boolean;
-  requiredTypes: string[];
-};
-
-const TYPE_TOKENS = ['grass', 'fire', 'water', 'lightning', 'psychic', 'fighting', 'darkness', 'metal', 'dragon', 'fairy', 'colorless'];
-
-const ATTACK_DAMAGE_INTENT_PATTERNS = [
-  /highest\s+damage/i,
-  /largest\s+attack/i,
-  /max(?:imum)?\s+damage/i,
-  /strongest\s+attack/i,
-  /most\s+damage/i,
-];
 
 function parseDamageValue(raw?: string): number {
   if (!raw) return Number.NEGATIVE_INFINITY;
@@ -34,16 +20,7 @@ function hasType(card: NormalizedCard, t: string): boolean {
   return card.types.some((type) => type.toLowerCase() === t);
 }
 
-export function analyzeQueryIntent(query: string): QueryIntent {
-  const lowered = query.toLowerCase();
-  const requiredTypes = TYPE_TOKENS.filter((type) => new RegExp(`\\b${type}\\b`, 'i').test(lowered));
-  const wantsAttackDamageRanking = ATTACK_DAMAGE_INTENT_PATTERNS.some((re) => re.test(query));
-
-  return {
-    wantsAttackDamageRanking,
-    requiredTypes,
-  };
-}
+export { analyzeQueryIntent } from './queryIntent';
 
 export function rerankCardsForQuery(cards: NormalizedCard[], query: string): NormalizedCard[] {
   const intent = analyzeQueryIntent(query);
@@ -62,6 +39,13 @@ export function rerankCardsForQuery(cards: NormalizedCard[], query: string): Nor
     .filter(({ maxDamage }) => Number.isFinite(maxDamage))
     .sort((a, b) => {
       if (b.maxDamage !== a.maxDamage) return b.maxDamage - a.maxDamage;
+
+      const idOrder = a.card.id.localeCompare(b.card.id);
+      if (idOrder !== 0) return idOrder;
+
+      const nameOrder = a.card.name.localeCompare(b.card.name);
+      if (nameOrder !== 0) return nameOrder;
+
       return a.idx - b.idx;
     })
     .map(({ card }) => card);

@@ -33,4 +33,56 @@ describe('searchCards attack-damage intent ranking', () => {
     expect(response.results.slice(0, 2).map((card) => card.id)).toEqual(['p-2', 'p-1']);
     expect(response.results.some((card) => card.id === 'e-1')).toBe(false);
   });
+
+  it('uses a broader tcgdex candidate pool and can surface high-damage cards past the first 24 IDs', async () => {
+    process.env.CARD_PROVIDER_PRIMARY = 'tcgdex';
+
+    const typeList = Array.from({ length: 40 }, (_, i) => ({
+      id: i === 30 ? 'w-top' : `w-${i + 1}`,
+      name: `Water ${i + 1}`,
+      image: `img-${i + 1}`,
+    }));
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        if (url.includes('/cards?types=Water&category=Pokemon')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => typeList,
+          };
+        }
+
+        if (url.includes('/cards?name=')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => [],
+          };
+        }
+
+        const id = url.split('/').pop() ?? 'unknown';
+        const numeric = Number((id.match(/\d+/)?.[0] ?? '1'));
+        const damage = id === 'w-top' ? '320' : String(40 + numeric);
+
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            id,
+            name: id,
+            category: 'Pokemon',
+            types: ['Water'],
+            attacks: [{ name: 'Hit', damage }],
+          }),
+        };
+      })
+    );
+
+    const response = await searchCards('water type pokemon highest damage');
+
+    expect(response.results).toHaveLength(24);
+    expect(response.results[0]?.id).toBe('w-top');
+  });
 });

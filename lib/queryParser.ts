@@ -1,24 +1,6 @@
-const TYPE_TOKENS = [
-  'grass',
-  'fire',
-  'water',
-  'lightning',
-  'psychic',
-  'fighting',
-  'darkness',
-  'metal',
-  'dragon',
-  'fairy',
-  'colorless'
-];
+import { analyzeQueryIntent, TYPE_TOKENS } from './queryIntent';
 
-const ATTACK_DAMAGE_INTENT_PATTERNS = [
-  /highest\s+damage/i,
-  /largest\s+attack/i,
-  /max(?:imum)?\s+damage/i,
-  /strongest\s+attack/i,
-  /most\s+damage/i,
-];
+const TYPE_TOKEN_SET = new Set(TYPE_TOKENS);
 
 export function buildPokemonTcgQuery(input: string): string {
   const query = input.trim().toLowerCase();
@@ -28,7 +10,7 @@ export function buildPokemonTcgQuery(input: string): string {
   const clauses: string[] = [];
 
   for (const token of tokens) {
-    if (TYPE_TOKENS.includes(token)) {
+    if (TYPE_TOKEN_SET.has(token as (typeof TYPE_TOKENS)[number])) {
       clauses.push(`types:${token}`);
       continue;
     }
@@ -50,9 +32,9 @@ export function buildPokemonTcgQuery(input: string): string {
   }
 
   const baseQuery = clauses.join(' OR ');
-  const wantsAttackDamageRanking = ATTACK_DAMAGE_INTENT_PATTERNS.some((pattern) => pattern.test(input));
+  const intent = analyzeQueryIntent(input);
 
-  if (!wantsAttackDamageRanking) {
+  if (!intent.wantsAttackDamageRanking) {
     return baseQuery;
   }
 

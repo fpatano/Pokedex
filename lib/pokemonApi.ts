@@ -7,6 +7,8 @@ import type { SearchResponse, NormalizedCard } from './types';
 
 const COOL_PICKS_PRIMARY_EXCLUSION_COUNT = 8;
 const MAX_RESULTS = 24;
+const DEFAULT_DAMAGE_INTENT_CANDIDATE_POOL_LIMIT = 150;
+const DEFAULT_TCGDEX_DETAIL_CONCURRENCY = 8;
 
 const debugEnabled = /^(1|true|yes|on)$/i.test(process.env.POKEMON_API_DEBUG ?? '');
 
@@ -74,6 +76,16 @@ function parseBooleanEnv(name: string, fallback = false): boolean {
   const raw = process.env[name];
   if (raw == null) return fallback;
   return /^(1|true|yes|on)$/i.test(raw);
+}
+
+function getDamageIntentCandidatePoolLimit(): number {
+  const configured = parseNumberEnv('DAMAGE_INTENT_CANDIDATE_POOL_LIMIT', DEFAULT_DAMAGE_INTENT_CANDIDATE_POOL_LIMIT);
+  return Math.max(MAX_RESULTS, configured);
+}
+
+function getTcgdexDetailConcurrency(): number {
+  const configured = parseNumberEnv('TCGDEX_DETAIL_CONCURRENCY', DEFAULT_TCGDEX_DETAIL_CONCURRENCY);
+  return Math.max(1, Math.min(configured, 32));
 }
 
 function getRuntimeConfig(): ProviderRuntimeConfig {
@@ -229,11 +241,13 @@ const tcgdexCardSchema = z.object({
 async function fetchFromPokemonTcg(userQuery: string, config: ProviderRuntimeConfig): Promise<NormalizedCard[]> {
   const apiKey = process.env.POKEMON_TCG_API_KEY;
   if (!apiKey) {
-    throw new PokemonApiError('MISCONFIGURED', 'Pokémon TCG fallback is enabled but POKEMON_TCG_API_KEY is missing');
+    throw new PokemonApiError('MISCONFIGURED', 'Pokémon card provider configuration is unavailable');
   }
 
   const q = buildPokemonTcgQuery(userQuery);
-  const url = `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(q)}&pageSize=${MAX_RESULTS}`;
+  const intent = analyzeQueryIntent(userQuery);
+  const pageSize = intent.wantsAttackDamageRanking ? getDamageIntentCandidatePoolLimit() : MAX_RESULTS;
+  const url = `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(q)}&pageSize=${pageSize}`;
 
   const result = await withRetries(
     { provider: 'pokemontcg', endpoint: '/v2/cards' },
@@ -367,9 +381,30 @@ async function tcgdexFetchJson(url: string, config: ProviderRuntimeConfig): Prom
   return result.value;
 }
 
+async function fetchTcgdexCardsByIds(ids: string[], config: ProviderRuntimeConfig): Promise<Array<z.infer<typeof tcgdexCardSchema>>> {
+  const concurrency = getTcgdexDetailConcurrency();
+  const out: Array<z.infer<typeof tcgdexCardSchema>> = [];
+  let cursor = 0;
+
+  async function worker(): Promise<void> {
+    while (cursor < ids.length) {
+      const index = cursor;
+      cursor += 1;
+
+      const id = ids[index];
+      const cardJson = await tcgdexFetchJson(`https://api.tcgdex.net/v2/en/cards/${id}`, config);
+      out[index] = tcgdexCardSchema.parse(cardJson);
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(concurrency, ids.length) }, () => worker()));
+  return out.filter(Boolean);
+}
+
 async function fetchFromTcgdex(userQuery: string, config: ProviderRuntimeConfig): Promise<NormalizedCard[]> {
   const intent = analyzeQueryIntent(userQuery);
   const terms = buildTcgdexTerms(userQuery);
+  const candidateLimit = intent.wantsAttackDamageRanking ? getDamageIntentCandidatePoolLimit() : MAX_RESULTS;
   const ids = new Set<string>();
 
   if (intent.wantsAttackDamageRanking && intent.requiredTypes.length > 0) {
@@ -383,37 +418,32 @@ async function fetchFromTcgdex(userQuery: string, config: ProviderRuntimeConfig)
 
       for (const card of list) {
         ids.add(card.id);
-        if (ids.size >= MAX_RESULTS) break;
+        if (ids.size >= candidateLimit) break;
       }
 
-      if (ids.size >= MAX_RESULTS) break;
+      if (ids.size >= candidateLimit) break;
     }
   }
 
   for (const term of terms) {
-    if (ids.size >= MAX_RESULTS) break;
+    if (ids.size >= candidateLimit) break;
 
     const listJson = await tcgdexFetchJson(`https://api.tcgdex.net/v2/en/cards?name=${encodeURIComponent(term)}`, config);
     const list = tcgdexCardListSchema.parse(listJson);
 
     for (const card of list) {
       ids.add(card.id);
-      if (ids.size >= MAX_RESULTS) break;
+      if (ids.size >= candidateLimit) break;
     }
   }
 
   if (ids.size === 0) {
     const allJson = await tcgdexFetchJson('https://api.tcgdex.net/v2/en/cards', config);
     const all = tcgdexCardListSchema.parse(allJson);
-    all.slice(0, MAX_RESULTS).forEach((card) => ids.add(card.id));
+    all.slice(0, candidateLimit).forEach((card) => ids.add(card.id));
   }
 
-  const cards = await Promise.all(
-    [...ids].slice(0, MAX_RESULTS).map(async (id) => {
-      const cardJson = await tcgdexFetchJson(`https://api.tcgdex.net/v2/en/cards/${id}`, config);
-      return tcgdexCardSchema.parse(cardJson);
-    })
-  );
+  const cards = await fetchTcgdexCardsByIds([...ids].slice(0, candidateLimit), config);
 
   return cards.map(normalizeTcgdexCard);
 }
@@ -456,15 +486,16 @@ export async function searchCards(userQuery: string): Promise<SearchResponse> {
     try {
       const results = provider === 'tcgdex' ? await fetchFromTcgdex(userQuery, config) : await fetchFromPokemonTcg(userQuery, config);
       const rankedResults = rerankCardsForQuery(results, userQuery);
+      const finalResults = rankedResults.slice(0, MAX_RESULTS);
       if (isFallback) {
         markFallbackSuccess();
       }
 
       return {
         query: userQuery,
-        results: rankedResults,
-        coolPicks: pickCoolCards(rankedResults, userQuery, {
-          excludedIds: rankedResults.slice(0, COOL_PICKS_PRIMARY_EXCLUSION_COUNT).map((card) => card.id),
+        results: finalResults,
+        coolPicks: pickCoolCards(finalResults, userQuery, {
+          excludedIds: finalResults.slice(0, COOL_PICKS_PRIMARY_EXCLUSION_COUNT).map((card) => card.id),
         }),
       };
     } catch (error) {

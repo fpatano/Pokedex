@@ -30,6 +30,16 @@ describe('rerankCardsForQuery', () => {
     expect(ranked.map((c) => c.id)).toEqual(['w2', 'w1']);
   });
 
+  it('uses deterministic tie-breakers when damage is equal', () => {
+    const cards = [
+      card({ id: 'z', name: 'Zulu', types: ['Water'], attacks: [{ name: 'Hit', damage: '120' }] }),
+      card({ id: 'a', name: 'Alpha', types: ['Water'], attacks: [{ name: 'Hit', damage: '120' }] }),
+    ];
+
+    const ranked = rerankCardsForQuery(cards, 'water type pokemon highest damage');
+    expect(ranked.map((c) => c.id)).toEqual(['a', 'z']);
+  });
+
   it('does not alter ordering for non damage-ranking intents', () => {
     const cards = [
       card({ id: 'a', name: 'A' }),
