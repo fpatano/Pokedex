@@ -48,6 +48,13 @@ npm run dev
 
 Open: `http://localhost:3000`
 
+## Codespaces + mobile testing
+
+Sprint handoff workflow docs:
+
+- `docs/CODESPACES-MOBILE-TESTING.md`
+- `docs/SPRINT-HANDOFF-TEMPLATE.md`
+
 ---
 
 ## Environment variables
@@ -72,6 +79,7 @@ Open: `http://localhost:3000`
 ## Scripts
 
 - `npm run dev` — run local dev server
+- `npm run dev:cloud` — run dev server on `0.0.0.0:3000` for Codespaces/mobile testing
 - `npm run test` — run Vitest suite
 - `npm run lint` — run ESLint
 - `npm run build` — build production bundle
