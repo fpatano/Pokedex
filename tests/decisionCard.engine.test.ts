@@ -85,4 +85,28 @@ describe('Decision Card deterministic engine v1', () => {
     expect(second.deckSkeleton).toStrictEqual(first.deckSkeleton);
     expect(second.explainability.decision_trace_id).toBe(first.explainability.decision_trace_id);
   });
+
+  it('degrades gracefully when deck skeleton build fails', () => {
+    const response = buildDecisionCard(
+      {
+        input: {
+          hasDecklist: true,
+          hasSideboardPlan: false,
+          gamesPlayed: 10,
+          winRate: 0.5,
+          consistencyScore: 0.56,
+          rulesKnowledgeScore: 0.6,
+          unresolvedBlockingIssues: [],
+        },
+        collectionIntakePartial: {
+          cards: [{ card_name: 'Quick Ball', count: 1 }],
+        },
+      },
+      { includeDeckSkeleton: true, forceDeckSkeletonFailure: true }
+    );
+
+    expect(response.deckSkeleton).toBeUndefined();
+    expect(response.next_actions[0]).toContain('Deck skeleton is temporarily unavailable');
+    expect(response.explainability.recommended_next_actions[0]).toContain('Deck skeleton is temporarily unavailable');
+  });
 });

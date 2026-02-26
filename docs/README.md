@@ -15,6 +15,7 @@ Quick navigation for the Pokédex MVP docs.
 - **Decision Card v1 release packet:** [`decision-card-v1-release-packet.md`](decision-card-v1-release-packet.md)
 - **Milestone A gate signoff log:** [`milestone-a-gate-signoff-2026-02-26.md`](milestone-a-gate-signoff-2026-02-26.md)
 - **Milestone B sprint lock (partial collection + deck skeleton):** [`MILESTONE-B-SPRINT-LOCK-v1.md`](MILESTONE-B-SPRINT-LOCK-v1.md)
+- **Milestone B gate signoff log:** [`milestone-b-gate-signoff-2026-02-26.md`](milestone-b-gate-signoff-2026-02-26.md)
 
 ## Operations and release handoff
 

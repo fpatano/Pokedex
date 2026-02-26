@@ -312,7 +312,10 @@ function addGapActionability(baseActions: string[], missingCore: Array<{ card_na
   return [gapAction, ...baseActions];
 }
 
-export function buildDecisionCard(requestOrInput: DecisionCardRequest | DecisionInput, options?: { includeDeckSkeleton?: boolean }): DecisionCardResponse {
+export function buildDecisionCard(
+  requestOrInput: DecisionCardRequest | DecisionInput,
+  options?: { includeDeckSkeleton?: boolean; forceDeckSkeletonFailure?: boolean }
+): DecisionCardResponse {
   const request: DecisionCardRequest = 'input' in requestOrInput ? requestOrInput : { input: requestOrInput };
   const input = request.input;
 
@@ -328,8 +331,25 @@ export function buildDecisionCard(requestOrInput: DecisionCardRequest | Decision
   const confidence = computeConfidence(state, input, blockers);
   const canonicalCollection = canonicalizeCollectionIntake(request);
   const shouldBuildDeckSkeleton = Boolean(options?.includeDeckSkeleton);
-  const deckSkeleton = shouldBuildDeckSkeleton ? buildDeckSkeleton(state, reasons, canonicalCollection) : undefined;
-  const nextActions = deckSkeleton ? addGapActionability(buildNextActions(state, input), deckSkeleton.missingCore) : buildNextActions(state, input);
+
+  let deckSkeleton: DecisionCardResponse['deckSkeleton'] | undefined;
+  let deckSkeletonFallbackNote: string | undefined;
+
+  if (shouldBuildDeckSkeleton) {
+    try {
+      if (options?.forceDeckSkeletonFailure) {
+        throw new Error('forced deck skeleton failure');
+      }
+      deckSkeleton = buildDeckSkeleton(state, reasons, canonicalCollection);
+    } catch {
+      deckSkeletonFallbackNote =
+        'Deck skeleton is temporarily unavailable; continue with readiness actions while collection gaps are recalculated.';
+    }
+  }
+
+  const baseNextActions = buildNextActions(state, input);
+  const gapAwareActions = deckSkeleton ? addGapActionability(baseNextActions, deckSkeleton.missingCore) : baseNextActions;
+  const nextActions = deckSkeletonFallbackNote ? [deckSkeletonFallbackNote, ...gapAwareActions] : gapAwareActions;
 
   const decisionTraceId = createHash('sha1')
     .update(

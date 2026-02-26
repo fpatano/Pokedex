@@ -19,6 +19,7 @@
   - env toggle: `DECK_SKELETON_V1_ENABLED` (default disabled)
   - header: `x-deck-skeleton-variant: v1|disabled`
 - No breaking contract removals/renames
+- Failure safety: if skeleton generation errors, response degrades gracefully to base shape + non-fatal next-action note
 
 ## Validation command
 ```bash
@@ -32,13 +33,14 @@ npm run test -- \
 
 ## Validation output (pass)
 - Test Files: **5 passed (5)**
-- Tests: **22 passed (22)**
+- Tests: **24 passed (24)**
 - Key checks:
   - contract/additive request-response
   - deterministic canonical intake + trace id stability
   - J8/J9/J10 journey coverage with skeleton assertions
   - route toggle/header semantics
   - deck skeleton golden stability
+  - graceful fallback when skeleton builder fails (non-fatal note, no contract break)
 
 ## Gate checklist for Andy
 1. Verify additive-only contract drift (request/response strictness preserved)
