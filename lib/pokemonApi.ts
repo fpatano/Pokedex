@@ -302,11 +302,24 @@ async function fetchFromPokemonTcg(userQuery: string, config: ProviderRuntimeCon
   return result.value.data.map(normalizeCard);
 }
 
+export function resolveTcgdexImageUrl(image?: string): string {
+  if (!image) return '';
+
+  // TCGdex often returns an asset base path without extension/quality.
+  // Example: https://assets.tcgdex.net/en/lc/lc/5
+  // Renderable card assets require a variant path such as /high.webp.
+  if (/\.[a-z0-9]+$/i.test(image) || /\/(high|low)\.(webp|jpg|jpeg|png)$/i.test(image)) {
+    return image;
+  }
+
+  return `${image.replace(/\/$/, '')}/high.webp`;
+}
+
 function normalizeTcgdexCard(card: z.infer<typeof tcgdexCardSchema>): NormalizedCard {
   return {
     id: card.id,
     name: card.name,
-    image: card.image ?? '',
+    image: resolveTcgdexImageUrl(card.image),
     setName: card.set?.name ?? 'Unknown Set',
     supertype: card.category ?? 'Unknown',
     types: card.types ?? [],
