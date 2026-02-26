@@ -72,10 +72,11 @@ describe('SearchClient UI vertical slice', () => {
       expect(screen.getByText('Total cards saved: 3')).toBeTruthy();
     });
 
+    fireEvent.click(screen.getByRole('button', { name: /^collection$/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
 
     await waitFor(() => {
-      expect(screen.getByText('Total cards saved: 0')).toBeTruthy();
+      expect(screen.getAllByText('Total cards saved: 0').length).toBeGreaterThan(0);
       expect(screen.getByText(/No cards in collection match this filter/i)).toBeTruthy();
     });
   });
@@ -406,6 +407,7 @@ describe('SearchClient UI vertical slice', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     render(<SearchClient />);
+    fireEvent.click(screen.getByRole('button', { name: /^coach$/i }));
 
     fireEvent.click(screen.getByRole('button', { name: /run happy path/i }));
 

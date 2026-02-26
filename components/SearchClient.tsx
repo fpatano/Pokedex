@@ -323,6 +323,9 @@ export default function SearchClient() {
     });
   }, [collection, normalizedNameFilter, collectionTypeFilter]);
 
+  const statusTone = error || coachError || decisionCardError || collectionError ? 'error' : loading || coachLoading ? 'loading' : 'idle';
+  const statusMessage = error || coachError || decisionCardError || collectionError || (loading ? 'Searching cards…' : coachLoading ? 'Running coach…' : null);
+
   return (
     <main className="mx-auto max-w-6xl p-6">
       <h1 className="mb-2 text-3xl font-bold">Pokédex Search</h1>
@@ -346,7 +349,21 @@ export default function SearchClient() {
         ))}
       </div>
 
-      <section className="mb-4 rounded border border-violet-500/40 bg-slate-900 p-4" data-testid="coach-demo">
+      <section
+        className={`mb-4 rounded border p-3 text-sm ${
+          statusTone === 'error'
+            ? 'border-red-500/60 bg-red-950/30 text-red-200'
+            : statusTone === 'loading'
+              ? 'border-blue-500/60 bg-blue-950/30 text-blue-200'
+              : 'border-slate-700 bg-slate-900 text-slate-300'
+        }`}
+      >
+        <p className="font-medium">System status</p>
+        <p>{statusMessage ?? 'Ready'}</p>
+        <p className="mt-1 text-xs opacity-90">Total cards saved: {collection.reduce((sum, entry) => sum + entry.quantity, 0)}</p>
+      </section>
+
+      {activeTab === 'coach' && <section className="mb-4 rounded border border-violet-500/40 bg-slate-900 p-4" data-testid="coach-demo">
         <h2 className="text-lg font-semibold">Coach Core Demo (v1)</h2>
         <p className="mb-2 text-sm text-slate-300">Demo coach-core contract via <code>/api/coach</code>: deterministic archetype + plan, or explicit fallback when critical intake is missing.</p>
         <div className="flex flex-wrap gap-2">
@@ -534,8 +551,9 @@ export default function SearchClient() {
             )}
           </div>
         )}
-      </section>
+      </section>}
 
+      {activeTab === 'search' && <>
       <section className="mb-4 rounded border border-emerald-500/40 bg-slate-900 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -708,8 +726,9 @@ export default function SearchClient() {
           </div>
         </section>
       )}
+      </>}
 
-      <section className="mt-8 rounded border border-cyan-500/40 bg-slate-900 p-4">
+      {activeTab === 'collection' && <section className="mt-8 rounded border border-cyan-500/40 bg-slate-900 p-4">
         <h2 className="text-lg font-semibold">Collection Command Center</h2>
         <p className="mb-3 text-sm text-slate-300">Saved cards with quantity controls and quick filtering.</p>
 
@@ -777,7 +796,7 @@ export default function SearchClient() {
             ))}
           </div>
         )}
-      </section>
+      </section>}
 
       {selectedCard && (
         <div role="dialog" aria-label="card-detail-modal" className="fixed inset-0 z-20 flex items-center justify-center bg-black/70 p-4">
