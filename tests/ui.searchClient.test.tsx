@@ -258,6 +258,7 @@ describe('SearchClient UI vertical slice', () => {
               contractVersion: 'coach-core.v1',
               mode: 'coach',
               confidence: 0.8,
+              confidenceLabel: 'high',
               archetype: 'AGGRO_TEMPO',
               rationale: ['Fast pace preference maps to AGGRO_TEMPO.'],
               canonicalIntake: {
@@ -275,6 +276,11 @@ describe('SearchClient UI vertical slice', () => {
                 steps: ['step one', 'step two', 'step three'],
                 rationale: 'plan rationale',
               },
+              missingSinglesExport: {
+                format: 'coach-missing-singles.v1',
+                generatedFromContract: 'coach-core.v1',
+                items: [],
+              },
               fallbackReason: null,
             }),
           };
@@ -286,6 +292,7 @@ describe('SearchClient UI vertical slice', () => {
             contractVersion: 'coach-core.v1',
             mode: 'fallback',
             confidence: 0.3,
+            confidenceLabel: 'low',
             archetype: null,
             rationale: ['Fallback triggered: missing critical intent fields (objective or favoriteTypes).'],
             canonicalIntake: {
@@ -302,6 +309,26 @@ describe('SearchClient UI vertical slice', () => {
               title: 'MIDRANGE_TOOLBOX playable-now plan',
               steps: ['step one', 'step two', 'step three'],
               rationale: 'plan rationale',
+            },
+            missingSinglesExport: {
+              format: 'coach-missing-singles.v1',
+              generatedFromContract: 'coach-core.v1',
+              items: [
+                {
+                  id: 'objective',
+                  category: 'critical_input',
+                  label: 'Add one clear objective (example: "control draw lock plan").',
+                  confidenceLabel: 'low',
+                  required: true,
+                },
+                {
+                  id: 'favoriteTypes',
+                  category: 'critical_input',
+                  label: 'Add at least one favorite type (example: ["Fire"]).',
+                  confidenceLabel: 'low',
+                  required: true,
+                },
+              ],
             },
             fallbackReason: 'MISSING_CRITICAL_INPUT',
           }),

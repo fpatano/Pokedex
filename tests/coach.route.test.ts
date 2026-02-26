@@ -46,8 +46,10 @@ describe('/api/coach route (Coach Core M2)', () => {
     expect(res.status).toBe(200);
     expect(body.mode).toBe('coach');
     expect(typeof body.archetype).toBe('string');
+    expect(body.confidenceLabel).toMatch(/^(high|medium|low)$/);
     expect(body.plan.horizon).toBe('NEXT_7_DAYS');
     expect(body.plan.steps).toHaveLength(3);
+    expect(body.missingSinglesExport.items).toStrictEqual([]);
     expect(body.fallbackReason).toBeNull();
   });
 
@@ -60,7 +62,9 @@ describe('/api/coach route (Coach Core M2)', () => {
       mode: 'fallback',
       fallbackReason: 'MISSING_CRITICAL_INPUT',
       archetype: null,
+      confidenceLabel: 'low',
     });
+    expect(body.missingSinglesExport.items.map((item: { id: string }) => item.id)).toStrictEqual(['objective', 'favoriteTypes']);
   });
 
   it('emits minimal trace logging at API boundary', async () => {

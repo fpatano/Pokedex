@@ -31,6 +31,27 @@ export const CoachRequestSchema = z
 export type CoachRequest = z.infer<typeof CoachRequestSchema>;
 
 const ConfidenceSchema = z.number().min(0).max(1);
+export const ConfidenceLabelSchema = z.enum(['high', 'medium', 'low']);
+export type ConfidenceLabel = z.infer<typeof ConfidenceLabelSchema>;
+
+const MissingSingleSchema = z
+  .object({
+    id: z.enum(['objective', 'favoriteTypes']),
+    category: z.literal('critical_input'),
+    label: z.string().min(1),
+    confidenceLabel: ConfidenceLabelSchema,
+    required: z.literal(true),
+  })
+  .strict();
+
+export const MissingSinglesExportSchema = z
+  .object({
+    format: z.literal('coach-missing-singles.v1'),
+    generatedFromContract: z.literal(COACH_CORE_CONTRACT_VERSION),
+    items: z.array(MissingSingleSchema),
+  })
+  .strict();
+export type MissingSinglesExport = z.infer<typeof MissingSinglesExportSchema>;
 
 export const CoachCanonicalIntakeSchema = z
   .object({
@@ -60,10 +81,12 @@ export const CoachSuccessResponseSchema = z
     contractVersion: z.literal(COACH_CORE_CONTRACT_VERSION),
     mode: z.literal('coach'),
     confidence: ConfidenceSchema,
+    confidenceLabel: ConfidenceLabelSchema,
     archetype: CoachArchetypeSchema,
     rationale: z.array(z.string().min(1)).min(1),
     canonicalIntake: CoachCanonicalIntakeSchema,
     plan: CoachPlanSchema,
+    missingSinglesExport: MissingSinglesExportSchema,
     fallbackReason: z.null(),
   })
   .strict();
@@ -74,10 +97,12 @@ export const CoachFallbackResponseSchema = z
     contractVersion: z.literal(COACH_CORE_CONTRACT_VERSION),
     mode: z.literal('fallback'),
     confidence: ConfidenceSchema,
+    confidenceLabel: ConfidenceLabelSchema,
     archetype: z.null(),
     rationale: z.array(z.string().min(1)).min(1),
     canonicalIntake: CoachCanonicalIntakeSchema,
     plan: CoachPlanSchema,
+    missingSinglesExport: MissingSinglesExportSchema,
     fallbackReason: CoachFallbackReasonSchema,
   })
   .strict();

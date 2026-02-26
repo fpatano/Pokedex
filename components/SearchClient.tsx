@@ -67,6 +67,7 @@ export default function SearchClient() {
   const debouncedQuery = useMemo(() => query.trim(), [query]);
   const hasUserQuery = debouncedQuery.length > 0;
   const activeBaseQuery = hasUserQuery ? debouncedQuery : DEFAULT_DISCOVERY_QUERY;
+  const confidenceLabelHelper = 'Label thresholds: high ≥ 0.80, medium ≥ 0.55, low < 0.55.';
 
   const collectionTypeHints = useMemo(() => {
     const counts = new Map<string, number>();
@@ -147,6 +148,16 @@ export default function SearchClient() {
       setCoachError(e instanceof Error ? e.message : 'Coach request failed');
     } finally {
       setCoachLoading(false);
+    }
+  }
+
+  async function copyMissingSinglesJson() {
+    if (!coachResult) return;
+
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(coachResult.missingSinglesExport, null, 2));
+    } catch {
+      setCoachError('Could not copy export JSON. Please copy manually from the preview.');
     }
   }
 
@@ -275,6 +286,8 @@ export default function SearchClient() {
             <div className="grid gap-1 sm:grid-cols-2">
               <p>Mode: <span className="font-medium">{coachResult.mode}</span></p>
               <p>Confidence: <span className="font-medium">{coachResult.confidence.toFixed(2)}</span></p>
+              <p>Confidence label: <span className="font-medium uppercase">{coachResult.confidenceLabel}</span></p>
+              <p className="sm:col-span-2 text-xs text-slate-400">{confidenceLabelHelper}</p>
               <p className="break-all">Contract: <span className="font-medium">{coachResult.contractVersion}</span></p>
               <p>Archetype: <span className="font-medium">{coachResult.archetype ?? 'none (fallback)'}</span></p>
             </div>
@@ -298,13 +311,25 @@ export default function SearchClient() {
               </ul>
             </div>
 
+            <div>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-slate-300">Missing Singles Export</p>
+                <button
+                  onClick={() => void copyMissingSinglesJson()}
+                  className="rounded border border-slate-600 px-2 py-1 text-xs font-semibold hover:bg-slate-700"
+                >
+                  Copy JSON
+                </button>
+              </div>
+              <p className="text-xs text-slate-400">Deterministic machine-readable gap export ({coachResult.missingSinglesExport.items.length} item{coachResult.missingSinglesExport.items.length === 1 ? '' : 's'}).</p>
+              <pre className="mt-2 max-h-40 overflow-auto rounded border border-slate-700 bg-slate-900 p-2 text-xs text-slate-200">{JSON.stringify(coachResult.missingSinglesExport, null, 2)}</pre>
+            </div>
+
             {coachResult.mode === 'fallback' && (
               <div className="rounded border border-amber-500/60 bg-amber-950/30 p-2 text-amber-200">
                 <p className="font-semibold">Fallback explanation</p>
                 <p>
-                  {coachResult.fallbackReason === 'MISSING_CRITICAL_INPUT'
-                    ? 'Missing critical intake (objective or favorite types). Add one clear goal to unlock a locked coach recommendation.'
-                    : `Fallback reason: ${coachResult.fallbackReason}`}
+                  Missing critical intake (objective or favorite types). Add one clear goal to unlock a locked coach recommendation.
                 </p>
                 <p className="mt-1 text-amber-100">Next action: enter a specific objective (example: &quot;control draw lock plan&quot;) and rerun.</p>
               </div>

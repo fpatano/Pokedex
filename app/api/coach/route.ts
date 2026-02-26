@@ -44,6 +44,8 @@ export async function POST(req: NextRequest) {
     traceId,
     mode: response.mode,
     confidence: response.confidence,
+    confidenceLabel: response.confidenceLabel,
+    missingSingles: response.missingSinglesExport.items.length,
     fallbackReason: response.fallbackReason,
     archetype: response.archetype,
   });

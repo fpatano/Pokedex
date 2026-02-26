@@ -7,6 +7,7 @@ import {
   type CoachRequest,
   type CoachResponse,
 } from '@/lib/coach/contract';
+import { buildMissingSinglesExport, toConfidenceLabel } from '@/lib/coach/trust';
 
 const TOPIC_TOKENS = ['damage', 'attack', 'setup', 'consistency', 'control', 'tempo', 'draw', 'budget'] as const;
 
@@ -158,14 +159,17 @@ export function buildCoachResponse(request: CoachRequest): CoachResponse {
   const plan = buildPlayableNowPlan(resolved.archetype, canonicalIntake);
 
   if (!canonicalIntake.hasCriticalInput) {
+    const fallbackConfidence = clamp(Math.min(resolved.confidence, 0.3));
     return {
       contractVersion: COACH_CORE_CONTRACT_VERSION,
       mode: 'fallback',
-      confidence: clamp(Math.min(resolved.confidence, 0.3)),
+      confidence: fallbackConfidence,
+      confidenceLabel: toConfidenceLabel(fallbackConfidence),
       archetype: null,
       rationale: ['Fallback triggered: missing critical intent fields (objective or favoriteTypes).', ...resolved.rationale],
       canonicalIntake,
       plan,
+      missingSinglesExport: buildMissingSinglesExport(canonicalIntake, fallbackConfidence),
       fallbackReason: 'MISSING_CRITICAL_INPUT',
     };
   }
@@ -174,10 +178,12 @@ export function buildCoachResponse(request: CoachRequest): CoachResponse {
     contractVersion: COACH_CORE_CONTRACT_VERSION,
     mode: 'coach',
     confidence: resolved.confidence,
+    confidenceLabel: toConfidenceLabel(resolved.confidence),
     archetype: resolved.archetype,
     rationale: resolved.rationale,
     canonicalIntake,
     plan,
+    missingSinglesExport: buildMissingSinglesExport(canonicalIntake, resolved.confidence),
     fallbackReason: null,
   };
 }
