@@ -1,5 +1,7 @@
 # Decision Card v1 — Milestone A Release Packet
 
+> Docs index: [`docs/README.md`](README.md)
+
 ## Changelog
 - Added locked Decision Card v1 contract (`decision_card_version: "v1"`) with strict schema validation and backward-compatible request defaults.
 - Implemented deterministic readiness engine with ordered rules + deterministic tie-break behavior.

@@ -1,141 +1,173 @@
-# Pokédex MVP (Pokémon TCG Finder)
+# Pokédex MVP — Pokémon TCG Finder + Coach Runtime
 
-Lightweight Next.js app for searching real Pokémon TCG cards with a single API endpoint and a simple UI.
-
-## What this release includes
-
-- Next.js 15 + TypeScript + Tailwind
-- `GET /api/search?q=...` endpoint
-- **Primary provider:** [TCGdex](https://www.tcgdex.net/)
-- **Optional fallback provider:** [Pokémon TCG API](https://pokemontcg.io/) (only used when fallback key is configured)
-- Normalized response shape for frontend rendering
-- Query-level in-memory cache (60s TTL)
-- Client-side debounced search + stale-response guard
-- "Cool Picks" (up to 3 relevant, non-duplicate cards)
-- Tests + lint + build + live verification script
+> A practical, test-backed Next.js app for searching live Pokémon TCG cards, guiding player decisions, and shipping safely with documented rollback controls.
 
 ---
 
-## MacBook local setup
+## Why this project exists
 
-### 1) Prerequisites
+This project helps players move from **"I have a fuzzy idea"** to **"I can act on a clear card/deck decision"** by combining:
 
-- macOS with Node.js **22+**
-- npm (ships with Node)
+- live card search (`/api/search`)
+- structured coaching (`/api/coach`)
+- readiness decisioning (`/api/decision-card`)
+- deterministic behavior and release safety rails
+
+No mock catalog is used for search results—core card discovery uses real upstream providers.
+
+---
+
+## Current status at a glance
+
+### Milestone progression
+
+- **M1 — Coach Contract v1**
+  - Established initial typed contract for coach route behavior.
+  - Reference: [`docs/COACH-M1-CONTRACT-v1.md`](docs/COACH-M1-CONTRACT-v1.md)
+
+- **M2 — Coach Core Sprint Lock**
+  - Locked `coach-core.v1` contract and deterministic tie-break behavior.
+  - Reference: [`docs/COACH-M2-SPRINT-LOCK-v1.md`](docs/COACH-M2-SPRINT-LOCK-v1.md)
+
+- **M3 — Trust Layer (additive)**
+  - Added `confidenceLabel` and deterministic `missingSinglesExport` without breaking base contract.
+  - Reference: [`docs/COACH-M3-TRUST-LAYER-v1.md`](docs/COACH-M3-TRUST-LAYER-v1.md)
+
+- **M4 — Tournament Variant hardening**
+  - Added operational controls (timeouts, retries, rate limiting, circuit behavior, idempotency) behind runtime toggle.
+  - Reference: [`docs/M4-TOURNAMENT-HANDOFF-ANDY.md`](docs/M4-TOURNAMENT-HANDOFF-ANDY.md)
+
+- **Decision Card v1 (Milestone A release packet)**
+  - Added deterministic readiness engine + explainability payload with rollback-safe variant toggle.
+  - References:
+    - [`docs/decision-card-v1-release-packet.md`](docs/decision-card-v1-release-packet.md)
+    - [`docs/milestone-a-gate-signoff-2026-02-26.md`](docs/milestone-a-gate-signoff-2026-02-26.md)
+
+---
+
+## Architecture (high-level)
+
+```text
+UI (SearchClient)
+   ├─ GET /api/search         -> live provider policy + normalization + ranking/cool picks
+   ├─ POST /api/coach         -> coach-core.v1 (+ M3 trust layer, optional M4 tournament variant)
+   └─ POST /api/decision-card -> decision_card_version=v1 deterministic readiness engine
+```
+
+### Key modules
+
+- `components/SearchClient.tsx`
+  - debounced search, stale-response guard
+  - query assist, collection interactions, modal flows
+
+- `app/api/search/route.ts`
+  - query validation
+  - response cache checks
+  - normalized search response and stable error mapping
+
+- `lib/pokemonApi.ts`
+  - provider policy controls (`CARD_PROVIDER_PRIMARY`, optional fallback)
+  - timeout/retry/suppression/cache behavior
+
+- `app/api/coach/route.ts` + `lib/coach/*`
+  - deterministic coach response path
+  - M3 trust fields
+  - optional M4 tournament variant hardening controls
+
+- `app/api/decision-card/route.ts` + `lib/decisionCard/*`
+  - locked v1 schema and deterministic decision logic
+  - explainability payload and rollback-safe behavior
+
+---
+
+## Quickstart
+
+## 1) Prerequisites
+
+- Node.js **22+**
+- npm
 
 ```bash
 node -v
 npm -v
 ```
 
-### 2) Install
+## 2) Install
 
 ```bash
 npm install
 ```
 
-### 3) Configure env
+## 3) Configure environment
 
 ```bash
 cp .env.example .env.local
 ```
 
-### 4) Run
+## 4) Run locally
 
 ```bash
 npm run dev
 ```
 
-Open: `http://localhost:3000`
+Open `http://localhost:3000`.
 
-## Codespaces + mobile testing
+### Codespaces / mobile flow
 
-Sprint handoff workflow docs:
+Use:
 
-- `docs/CODESPACES-MOBILE-TESTING.md`
-- `docs/SPRINT-HANDOFF-TEMPLATE.md`
-
----
-
-## Environment variables
-
-| Variable | Required | Default | Purpose |
-|---|---|---|---|
-| `CARD_PROVIDER_PRIMARY` | Optional | `tcgdex` | Primary search provider (`tcgdex` or `pokemontcg`). |
-| `ENABLE_POKEMONTCG_FALLBACK` | Optional | `0` | Enables Pokémon TCG fallback when primary is `tcgdex`. |
-| `POKEMON_TCG_API_KEY` | Optional | unset | Required only when Pokémon TCG provider is used (primary or fallback). |
-| `TCGDEX_TIMEOUT_MS` | Optional | `10000` | Timeout for TCGdex requests. |
-| `POKEMON_TCG_TIMEOUT_MS` | Optional | `7000` | Timeout for Pokémon TCG requests. |
-| `PROVIDER_MAX_RETRIES` | Optional | `2` | Retries for transient provider failures. |
-| `PROVIDER_FALLBACK_FAILURE_THRESHOLD` | Optional | `3` | Consecutive fallback failures before temporary suppression. |
-| `PROVIDER_FALLBACK_SUPPRESS_MS` | Optional | `60000` | Suppression window for failing fallback path. |
-| `PROVIDER_CACHE_TTL_MS` | Optional | `60000` | In-memory provider response cache TTL. |
-| `POKEMON_API_DEBUG` | Optional | `0` | Set to `1`/`true` to log provider diagnostics (provider/status/latency/retries). |
-
-> This app does **not** use mock/fake card data. Responses come from live upstream APIs.
+- [`docs/CODESPACES-MOBILE-TESTING.md`](docs/CODESPACES-MOBILE-TESTING.md)
+- [`docs/SPRINT-HANDOFF-TEMPLATE.md`](docs/SPRINT-HANDOFF-TEMPLATE.md)
 
 ---
 
-## Scripts
+## Scripts you’ll actually use
 
-- `npm run dev` — run local dev server
-- `npm run dev:cloud` — run dev server on `0.0.0.0:3000` for Codespaces/mobile testing
-- `npm run dev:cloud:clean` — force clean-start (kills port `3000` listener + removes stale `.next` + restarts dev server)
-- `npm run preflight:env` — detect INVALID_ENV / missing Next chunk issue before UX runs
-- `npm run test` — run Vitest suite
-- `npm run lint` — run ESLint
-- `npm run build` — build production bundle
-- `npm run verify:live` — boot local app on a test port and verify live `/api/search` behavior
-- `npm run eval:dexter40` — run deterministic Dexter 40-query regression harness
-- `npm run quality:report` — print metadata pipeline quality report (mapping/validation/query metrics)
-
-### Live verification
-
-```bash
-npm run verify:live
-```
-
-The script validates:
-- `/api/search?q=fire` returns HTTP 200 and non-empty results
-- A "largest attack" style query returns data containing a max-attack candidate
+- `npm run dev` — local development
+- `npm run dev:cloud` — bind `0.0.0.0:3000` for Codespaces/mobile
+- `npm run dev:cloud:clean` — clean stale `.next` and restart cloud dev
+- `npm run preflight:env` — detects invalid env / missing chunk startup issues
+- `npm run test` — all Vitest suites
+- `npm run test:contract` — UI/backend contract-focused tests
+- `npm run lint` — ESLint checks
+- `npm run build` — production build
+- `npm run verify:live` — run local app and verify live `/api/search` behavior
+- `npm run validate:tournament-env` — validate tournament variant env for M4
+- `npm run eval:dexter40` — deterministic 40-query regression harness
+- `npm run quality:report` — metadata quality report
 
 ---
 
-## Architecture (high-level)
+## Feature walkthrough
 
-- **UI:** `components/SearchClient.tsx`
-  - Debounced input (350ms)
-  - Handles loading/error/empty/result states
-  - Guards against stale async responses
+### 1) Search + discovery
 
-- **API Route:** `app/api/search/route.ts`
-  - Validates `q`
-  - Serves cache hit if available
-  - Calls `searchCards()` on miss
-  - Maps upstream failures to stable HTTP errors
+- Debounced text search against live provider-backed data.
+- Stable empty/loading/error/result states.
+- Query-aware relevance ranking + cool-picks behavior.
 
-- **Search Service:** `lib/pokemonApi.ts`
-  - Uses explicit provider policy (`CARD_PROVIDER_PRIMARY`, optional fallback flag)
-  - Applies retries (bounded backoff+jitter), request timeouts, and fallback suppression after repeated failures
-  - Uses small in-memory provider cache to reduce repeated upstream fetches
-  - Normalizes both provider payloads to one internal card type
+### 2) Card clarity
 
-- **Support libs:**
-  - `lib/queryParser.ts` (query shaping for Pokémon TCG API)
-  - `lib/normalize.ts` (payload normalization)
-  - `lib/metadata/schema|adapter|normalizer|validator|eval` (v1 metadata pipeline)
-  - `lib/coolPicks.ts` (relevance + dedupe)
-  - `lib/cache.ts` (60s in-memory query cache)
+- Card detail modal supports richer metadata presentation.
+- Designed to keep partial metadata rendering resilient.
+
+### 3) Collection-aware coaching
+
+- `/api/coach` returns deterministic actionable guidance under `coach-core.v1`.
+- M3 adds trust/readiness transparency (`confidenceLabel`, missing singles export).
+
+### 4) Decision readiness
+
+- `/api/decision-card` returns deterministic `v1` decision state + explainability.
+- Supports safe rollback response path via env toggle.
 
 ---
 
-## API contract
+## API / contract highlights
 
-### Request
+## `GET /api/search?q=...`
 
-`GET /api/search?q=fire attacker 120`
-
-### Success response (`200`)
+Returns normalized card payload for UI rendering:
 
 ```json
 {
@@ -150,42 +182,130 @@ The script validates:
       "types": ["Fire"],
       "hp": "180",
       "abilityText": "...",
-      "attacks": [
-        { "name": "Burning Darkness", "damage": "180", "text": "..." }
-      ]
+      "attacks": [{ "name": "Burning Darkness", "damage": "180", "text": "..." }]
     }
   ],
   "coolPicks": []
 }
 ```
 
-### Error responses
+Error classes:
 
-- `400` — missing/empty query (`{"error":"Query is required"}`)
-- `502` — upstream unavailable / invalid upstream payload
-- `504` — upstream timeout
-- `500` — unexpected internal error
+- `400` query missing/empty
+- `502` upstream unavailable/invalid
+- `504` upstream timeout
+- `500` unexpected internal error
+
+## `POST /api/coach`
+
+- Contract track: M1 → M2 (`coach-core.v1`) + additive M3 trust layer
+- Optional M4 runtime variant adds header-level variant signaling (`x-coach-variant=tournament`) without contract body drift
+
+See:
+
+- `docs/COACH-M1-CONTRACT-v1.md`
+- `docs/COACH-M2-SPRINT-LOCK-v1.md`
+- `docs/COACH-M3-TRUST-LAYER-v1.md`
+- `docs/M4-TOURNAMENT-HANDOFF-ANDY.md`
+
+## `POST /api/decision-card`
+
+- Locked `decision_card_version: "v1"`
+- Deterministic readiness engine + explainability payload
+- Header-level variant reflects v1 vs rollback-safe mode
+
+See: `docs/decision-card-v1-release-packet.md`
 
 ---
 
-## Troubleshooting
+## Journey validation status
 
-- **No fallback behavior when TCGdex fails**
-  - Confirm `POKEMON_TCG_API_KEY` is set in `.env.local`
-  - Restart dev server after env changes
+**Current snapshot:** local validation is green in this repo state.
 
-- **`verify:live` fails with empty results**
-  - Check internet connectivity (this check is live-upstream dependent)
-  - Re-run; upstream availability can vary
+Validated with:
 
-- **`GET /` or `/api/search` returns 500 with `Cannot find module './<n>.js'`**
-  - Run `npm run preflight:env` to detect this quickly
-  - If INVALID_ENV is reported, run `npm run dev:cloud:clean`
-  - Re-run preflight (and then UX test) once both `/` and `/api/search` are healthy
+```bash
+npm run test
+npm run lint
+npm run build
+```
 
-- **Image domains or rendering concerns**
-  - Current implementation uses `next/image` with `unoptimized` for MVP simplicity
+Journey/acceptance-relevant suites include:
 
-- **Slow or inconsistent responses**
-  - Use `POKEMON_API_DEBUG=1` to inspect provider-level logs
-  - Remember cache is process-local and expires after 60s
+- `tests/contract.ui-backend-state.test.ts`
+- `tests/ui.searchClient.test.tsx`
+- `tests/coach.trust.integration.test.ts`
+- `tests/coach.tournament.route.test.ts`
+- `tests/decisionCard.journeyAcceptance.test.ts`
+
+Additional release-focused checks:
+
+```bash
+npm run test -- tests/decisionCard.route.test.ts tests/decisionCard.contract.test.ts tests/decisionCard.engine.test.ts tests/decisionCard.golden.test.ts
+npm run verify:live
+```
+
+---
+
+## Release + rollback notes
+
+### Release readiness checklist (practical)
+
+1. `npm run test`
+2. `npm run lint`
+3. `npm run build`
+4. If tournament mode is in scope: `npm run validate:tournament-env`
+5. Confirm intended toggles in `.env.local` / deployment env
+
+### Rollback controls
+
+- **Decision Card v1**
+  - `DECISION_CARD_V1_ENABLED=true` (default) enables v1
+  - set `false`/`0` for rollback-safe response variant
+
+- **Tournament coach variant (M4)**
+  - `TOURNAMENT_VARIANT_ENABLED=true` enables tournament hardening path
+  - set `false`/unset for standard variant
+
+For tournament operations and incident handling, use:
+`docs/TOURNAMENT-OPS-RUNBOOK.md`
+
+---
+
+## Roadmap snapshot
+
+Current planning artifact: [`docs/ROADMAP-UPDATES-2026-02-25.md`](docs/ROADMAP-UPDATES-2026-02-25.md)
+
+Highlights:
+
+- P0: lock search/cool-picks UI-state contract
+- P1: card detail modal depth + metadata mapping hardening
+- Progressive delivery in slices (A → D) with regression hardening
+
+---
+
+## Documentation map
+
+See [`docs/README.md`](docs/README.md) for a concise index of contracts, runbooks, handoff packets, and roadmap docs.
+
+---
+
+## Contributing
+
+1. Branch from latest mainline.
+2. Keep changes scoped and test-backed.
+3. Preserve contract stability unless intentionally versioning.
+4. Update docs in the same PR when behavior/contracts/toggles change.
+5. Before opening PR, run:
+
+```bash
+npm run test && npm run lint && npm run build
+```
+
+If touching coach/decision-card behavior, include relevant targeted suites and note toggle impacts.
+
+---
+
+## License
+
+[GNU GPL v3](LICENSE)

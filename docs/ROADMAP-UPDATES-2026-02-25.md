@@ -1,5 +1,7 @@
 # Roadmap Updates — 2026-02-25
 
+> Docs index: [`docs/README.md`](README.md)
+
 ## P0 — Search/Discovery UI State Contract Tightening
 
 ### P0-1: Gate Cool Picks to default page load only

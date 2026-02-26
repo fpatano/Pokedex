@@ -1,5 +1,7 @@
 # M4 Sprint Lock Handoff Packet — Andy
 
+> Docs index: [`docs/README.md`](README.md)
+
 ## Summary
 Tournament Build variant is implemented as a toggleable runtime mode over existing `coach-core.v1` contracts (`/api/coach`) with hardening controls, observability, and ops artifacts.
 
