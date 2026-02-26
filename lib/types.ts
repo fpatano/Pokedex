@@ -1,5 +1,6 @@
 import type { NormalizedCardV1 } from '@/lib/metadata/schema/normalizedCardV1';
 import type { CoachResponse as CoachCoreResponse } from '@/lib/coach/contract';
+import type { DecisionCardResponse as DecisionCardContractResponse } from '@/lib/decisionCard/contract';
 
 /**
  * Back-compat alias for existing consumers.
@@ -29,3 +30,4 @@ export type SearchResponse = {
 };
 
 export type CoachResponse = CoachCoreResponse;
+export type DecisionCardResponse = DecisionCardContractResponse;

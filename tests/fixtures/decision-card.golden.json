@@ -1,0 +1,145 @@
+[
+  {
+    "id": "tr-01-solid",
+    "input": {
+      "hasDecklist": true,
+      "hasSideboardPlan": true,
+      "gamesPlayed": 32,
+      "winRate": 0.66,
+      "consistencyScore": 0.82,
+      "rulesKnowledgeScore": 0.89,
+      "unresolvedBlockingIssues": []
+    },
+    "expectedState": "TOURNAMENT_READY"
+  },
+  {
+    "id": "tr-02-boundary",
+    "input": {
+      "hasDecklist": true,
+      "hasSideboardPlan": true,
+      "gamesPlayed": 25,
+      "winRate": 0.6,
+      "consistencyScore": 0.75,
+      "rulesKnowledgeScore": 0.8,
+      "unresolvedBlockingIssues": []
+    },
+    "expectedState": "TOURNAMENT_READY"
+  },
+  {
+    "id": "tr-03-overqualified",
+    "input": {
+      "hasDecklist": true,
+      "hasSideboardPlan": true,
+      "gamesPlayed": 40,
+      "winRate": 0.78,
+      "consistencyScore": 0.93,
+      "rulesKnowledgeScore": 0.91,
+      "unresolvedBlockingIssues": []
+    },
+    "expectedState": "TOURNAMENT_READY"
+  },
+  {
+    "id": "pn-01-solid",
+    "input": {
+      "hasDecklist": true,
+      "hasSideboardPlan": false,
+      "gamesPlayed": 12,
+      "winRate": 0.51,
+      "consistencyScore": 0.58,
+      "rulesKnowledgeScore": 0.61,
+      "unresolvedBlockingIssues": []
+    },
+    "expectedState": "PLAYABLE_NOW"
+  },
+  {
+    "id": "pn-02-boundary",
+    "input": {
+      "hasDecklist": true,
+      "hasSideboardPlan": false,
+      "gamesPlayed": 8,
+      "winRate": 0.45,
+      "consistencyScore": 0.5,
+      "rulesKnowledgeScore": 0.55,
+      "unresolvedBlockingIssues": []
+    },
+    "expectedState": "PLAYABLE_NOW"
+  },
+  {
+    "id": "pn-03-near-tournament",
+    "input": {
+      "hasDecklist": true,
+      "hasSideboardPlan": false,
+      "gamesPlayed": 24,
+      "winRate": 0.59,
+      "consistencyScore": 0.74,
+      "rulesKnowledgeScore": 0.79,
+      "unresolvedBlockingIssues": []
+    },
+    "expectedState": "PLAYABLE_NOW"
+  },
+  {
+    "id": "nr-01-no-deck",
+    "input": {
+      "hasDecklist": false,
+      "hasSideboardPlan": false,
+      "gamesPlayed": 4,
+      "winRate": 0.31,
+      "consistencyScore": 0.4,
+      "rulesKnowledgeScore": 0.42,
+      "unresolvedBlockingIssues": []
+    },
+    "expectedState": "NOT_READY_YET"
+  },
+  {
+    "id": "nr-02-low-winrate",
+    "input": {
+      "hasDecklist": true,
+      "hasSideboardPlan": false,
+      "gamesPlayed": 11,
+      "winRate": 0.41,
+      "consistencyScore": 0.61,
+      "rulesKnowledgeScore": 0.64,
+      "unresolvedBlockingIssues": []
+    },
+    "expectedState": "NOT_READY_YET"
+  },
+  {
+    "id": "nr-03-low-consistency",
+    "input": {
+      "hasDecklist": true,
+      "hasSideboardPlan": false,
+      "gamesPlayed": 9,
+      "winRate": 0.52,
+      "consistencyScore": 0.42,
+      "rulesKnowledgeScore": 0.68,
+      "unresolvedBlockingIssues": []
+    },
+    "expectedState": "NOT_READY_YET"
+  },
+  {
+    "id": "edge-01-conflict-high-metrics-with-blocker",
+    "input": {
+      "hasDecklist": true,
+      "hasSideboardPlan": true,
+      "gamesPlayed": 36,
+      "winRate": 0.71,
+      "consistencyScore": 0.86,
+      "rulesKnowledgeScore": 0.9,
+      "unresolvedBlockingIssues": ["DQ risk: unresolved decklist discrepancy"]
+    },
+    "expectedState": "PLAYABLE_NOW"
+  },
+  {
+    "id": "edge-02-repeatability-anchor",
+    "input": {
+      "hasDecklist": true,
+      "hasSideboardPlan": false,
+      "gamesPlayed": 8,
+      "winRate": 0.45,
+      "consistencyScore": 0.5,
+      "rulesKnowledgeScore": 0.55,
+      "unresolvedBlockingIssues": []
+    },
+    "expectedState": "PLAYABLE_NOW"
+  }
+]

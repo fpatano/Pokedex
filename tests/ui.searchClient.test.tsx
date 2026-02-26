@@ -337,6 +337,33 @@ describe('SearchClient UI vertical slice', () => {
         };
       }
 
+      if (url === '/api/decision-card' && init?.method === 'POST') {
+        return {
+          ok: true,
+          json: async () => ({
+            decision_card_version: 'v1',
+            state: 'PLAYABLE_NOW',
+            confidence: 0.84,
+            top_reasons: [
+              { reason_code: 'DECKLIST_READY', reason: 'Decklist is complete and coherent.', evidence_ref: 'input.hasDecklist=true', rank: 1 },
+              { reason_code: 'MATCHUP_BASELINE', reason: 'Recent reps provide stable matchup reads.', evidence_ref: 'input.gamesPlayed=12', rank: 2 },
+              { reason_code: 'CONSISTENCY_OK', reason: 'Consistency baseline passes readiness threshold.', evidence_ref: 'input.consistencyScore=0.85', rank: 3 },
+            ],
+            blocking_issues: ['Sideboard mapping can improve for mirror matchups.'],
+            next_actions: ['Run 5 focused reps vs mirror.', 'Document sideboard swaps for rounds 2-3.', 'Re-check mulligan map after reps.'],
+            explainability: {
+              reason_codes: ['DECKLIST_READY', 'MATCHUP_BASELINE', 'CONSISTENCY_OK'],
+              human_reasons: ['Decklist complete', 'Stable matchup reps', 'Consistency baseline passed'],
+              evidence_refs: ['input.hasDecklist=true', 'input.gamesPlayed=12', 'input.consistencyScore=0.85'],
+              confidence_basis: 'base=0.78, blockers=1, signal_coverage=4/4',
+              blocked_by: ['Sideboard mapping can improve for mirror matchups.'],
+              recommended_next_actions: ['Run 5 focused reps vs mirror.', 'Document sideboard swaps for rounds 2-3.', 'Re-check mulligan map after reps.'],
+              decision_trace_id: 'trace-test-123',
+            },
+          }),
+        };
+      }
+
       throw new Error(`unexpected fetch: ${url}`);
     });
 
@@ -363,7 +390,22 @@ describe('SearchClient UI vertical slice', () => {
       expect(screen.getByText(/Plan title/i)).toBeTruthy();
       expect(screen.getByText(/AGGRO_TEMPO playable-now plan/i)).toBeTruthy();
       expect(screen.getByText('tournament')).toBeTruthy();
+      expect(screen.getByText(/Decision Card v1/i)).toBeTruthy();
+      expect(screen.getByText(/Playable now/i)).toBeTruthy();
+      expect(screen.getByText(/\(PLAYABLE_NOW\)/i)).toBeTruthy();
+      expect(screen.getByText(/Confidence basis:/i)).toBeTruthy();
+      expect(screen.getByText('Top Reasons')).toBeTruthy();
+      expect(screen.getByText('Blockers')).toBeTruthy();
+      expect(screen.getByText('Next Actions')).toBeTruthy();
     });
+
+    const topReasonsList = screen.getByText('Top Reasons').nextElementSibling;
+    const blockersList = screen.getByText('Blockers').nextElementSibling;
+    const nextActionsList = screen.getByText('Next Actions').nextElementSibling;
+    expect(topReasonsList?.className).toContain('text-sm');
+    expect(topReasonsList?.className).toContain('leading-relaxed');
+    expect(blockersList?.className).toContain('text-sm');
+    expect(nextActionsList?.className).toContain('text-sm');
 
     fireEvent.click(screen.getByRole('button', { name: /run fallback path/i }));
 

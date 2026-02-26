@@ -1,0 +1,32 @@
+{
+  "version": "v1",
+  "rules": {
+    "tournament_ready": {
+      "min_games_played": 25,
+      "min_win_rate": 0.6,
+      "min_consistency_score": 0.75,
+      "min_rules_knowledge_score": 0.8,
+      "requires_decklist": true,
+      "requires_sideboard_plan": true
+    },
+    "playable_now": {
+      "min_games_played": 8,
+      "min_win_rate": 0.45,
+      "min_consistency_score": 0.5,
+      "min_rules_knowledge_score": 0.55,
+      "requires_decklist": true
+    }
+  },
+  "confidence": {
+    "base": {
+      "TOURNAMENT_READY": 0.88,
+      "PLAYABLE_NOW": 0.72,
+      "NOT_READY_YET": 0.64
+    },
+    "penalty_per_blocker": 0.07,
+    "bonus_full_signal_coverage": 0.04,
+    "min": 0.51,
+    "max": 0.98
+  },
+  "tie_break_order": ["TOURNAMENT_READY", "PLAYABLE_NOW", "NOT_READY_YET"]
+}

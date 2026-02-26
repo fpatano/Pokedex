@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { shouldApplyResponse } from '@/lib/requestGuard';
 import { applyRecommendationMutation, buildGuidedQuery, createDefaultGuidedBuilderState } from '@/lib/uiState';
-import type { CoachResponse, NormalizedCard, SearchResponse } from '@/lib/types';
+import type { CoachResponse, DecisionCardResponse, NormalizedCard, SearchResponse } from '@/lib/types';
 
 function CardThumb({ src, alt }: { src: string; alt: string }) {
   if (!src) return <div className="mb-2 h-44 w-full rounded bg-slate-700" />;
@@ -56,6 +56,8 @@ export default function SearchClient() {
   const [coachVariant, setCoachVariant] = useState<'standard' | 'tournament' | null>(null);
   const [coachLoading, setCoachLoading] = useState(false);
   const [coachError, setCoachError] = useState<string | null>(null);
+  const [decisionCard, setDecisionCard] = useState<DecisionCardResponse | null>(null);
+  const [decisionCardError, setDecisionCardError] = useState<string | null>(null);
 
   const [collection, setCollection] = useState<CollectionEntry[]>([]);
   const [collectionError, setCollectionError] = useState<string | null>(null);
@@ -69,6 +71,11 @@ export default function SearchClient() {
   const hasUserQuery = debouncedQuery.length > 0;
   const activeBaseQuery = hasUserQuery ? debouncedQuery : DEFAULT_DISCOVERY_QUERY;
   const confidenceLabelHelper = 'Label thresholds: high ≥ 0.80, medium ≥ 0.55, low < 0.55.';
+  const decisionStateLabelMap: Record<DecisionCardResponse['state'], string> = {
+    TOURNAMENT_READY: 'Tournament ready',
+    PLAYABLE_NOW: 'Playable now',
+    NOT_READY_YET: 'Not ready yet',
+  };
 
   const collectionTypeHints = useMemo(() => {
     const counts = new Map<string, number>();
@@ -125,9 +132,36 @@ export default function SearchClient() {
     };
   }, [assistedQuery, hasUserQuery, retryNonce]);
 
+  async function fetchDecisionCardFromCoach(coach: CoachResponse) {
+    const deckCount = collection.reduce((sum, entry) => sum + entry.quantity, 0);
+    const estimatedGamesPlayed = Math.min(40, Math.max(0, deckCount + (coach.mode === 'coach' ? 8 : 2)));
+
+    const payload = {
+      input: {
+        hasDecklist: coach.mode === 'coach',
+        hasSideboardPlan: coach.mode === 'coach' && coach.confidence >= 0.8,
+        gamesPlayed: estimatedGamesPlayed,
+        winRate: coach.mode === 'coach' ? Math.min(0.75, Math.max(0.35, coach.confidence)) : 0.3,
+        consistencyScore: coach.mode === 'coach' ? Math.min(0.9, Math.max(0.4, coach.confidence + 0.05)) : 0.35,
+        rulesKnowledgeScore: coach.mode === 'coach' ? Math.min(0.9, Math.max(0.45, coach.confidence)) : 0.4,
+        unresolvedBlockingIssues: coach.mode === 'fallback' ? ['Missing critical intake'] : [],
+      },
+    };
+
+    const decisionRes = await fetch('/api/decision-card', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const decisionJson = await decisionRes.json();
+    if (!decisionRes.ok) throw new Error(decisionJson.error ?? 'Decision card request failed');
+    setDecisionCard(decisionJson as DecisionCardResponse);
+  }
+
   async function runCoachDemo(prompt: string) {
     setCoachLoading(true);
     setCoachError(null);
+    setDecisionCardError(null);
 
     try {
       const res = await fetch('/api/coach', {
@@ -146,9 +180,18 @@ export default function SearchClient() {
       const resolvedVariant = headerVariant;
       setCoachVariant(resolvedVariant === 'tournament' || resolvedVariant === 'standard' ? resolvedVariant : null);
       if (!res.ok) throw new Error(json.error ?? 'Coach request failed');
-      setCoachResult(json as CoachResponse);
+      const coach = json as CoachResponse;
+      setCoachResult(coach);
+
+      try {
+        await fetchDecisionCardFromCoach(coach);
+      } catch (decisionError) {
+        setDecisionCard(null);
+        setDecisionCardError(decisionError instanceof Error ? decisionError.message : 'Decision card request failed');
+      }
     } catch (e) {
       setCoachResult(null);
+      setDecisionCard(null);
       setCoachVariant(null);
       setCoachError(e instanceof Error ? e.message : 'Coach request failed');
     } finally {
@@ -286,6 +329,7 @@ export default function SearchClient() {
           {coachLoading ? 'Running coach...' : 'Run Coach Request'}
         </button>
         {coachError && <p className="mt-2 text-sm text-red-400">{coachError}</p>}
+        {decisionCardError && <p className="mt-2 text-sm text-amber-300">Decision Card: {decisionCardError}</p>}
         {coachResult && (
           <div className="mt-3 space-y-3 rounded border border-slate-700 bg-slate-800 p-3 text-sm">
             <div className="grid gap-1 sm:grid-cols-2">
@@ -330,6 +374,51 @@ export default function SearchClient() {
               <p className="text-xs text-slate-400">Deterministic machine-readable gap export ({coachResult.missingSinglesExport.items.length} item{coachResult.missingSinglesExport.items.length === 1 ? '' : 's'}).</p>
               <pre className="mt-2 max-h-40 overflow-auto rounded border border-slate-700 bg-slate-900 p-2 text-xs text-slate-200">{JSON.stringify(coachResult.missingSinglesExport, null, 2)}</pre>
             </div>
+
+            {decisionCard && (
+              <div className="rounded border border-cyan-500/50 bg-cyan-950/20 p-3">
+                <p className="font-semibold text-cyan-200">Decision Card v1</p>
+                <p className="mt-1 text-sm leading-relaxed">
+                  State: <span className="font-medium">{decisionStateLabelMap[decisionCard.state]}</span>{' '}
+                  <span className="text-xs text-cyan-300">({decisionCard.state})</span> · Confidence:{' '}
+                  <span className="font-medium">{decisionCard.confidence.toFixed(2)}</span>
+                </p>
+                <p className="mt-1 text-sm text-cyan-100 leading-relaxed break-words">
+                  Confidence basis: <span className="font-medium">{decisionCard.explainability.confidence_basis}</span>
+                </p>
+
+                <div className="mt-3">
+                  <p className="text-sm font-semibold text-cyan-100">Top Reasons</p>
+                  <ul className="mt-1 list-disc space-y-2 pl-5 text-sm leading-relaxed text-cyan-100">
+                    {decisionCard.top_reasons.map((reason) => (
+                      <li key={reason.reason_code} className="break-words">{reason.reason} <span className="text-cyan-300">({reason.evidence_ref})</span></li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="mt-3">
+                  <p className="text-sm font-semibold text-cyan-100">Blockers</p>
+                  {decisionCard.blocking_issues.length > 0 ? (
+                    <ul className="mt-1 list-disc space-y-2 pl-5 text-sm leading-relaxed text-amber-200">
+                      {decisionCard.blocking_issues.map((issue) => (
+                        <li key={issue} className="break-words">{issue}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-sm text-cyan-200">None</p>
+                  )}
+                </div>
+
+                <div className="mt-3">
+                  <p className="text-sm font-semibold text-cyan-100">Next Actions</p>
+                  <ol className="mt-1 list-decimal space-y-2 pl-5 text-sm leading-relaxed text-cyan-100">
+                    {decisionCard.next_actions.map((step) => (
+                      <li key={step} className="break-words">{step}</li>
+                    ))}
+                  </ol>
+                </div>
+              </div>
+            )}
 
             {coachResult.mode === 'fallback' && (
               <div className="rounded border border-amber-500/60 bg-amber-950/30 p-2 text-amber-200">
