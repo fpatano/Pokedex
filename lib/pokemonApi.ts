@@ -4,6 +4,9 @@ import { normalizeCard } from './normalize';
 import { pickCoolCards } from './coolPicks';
 import { analyzeQueryIntent, rerankCardsForQuery } from './searchRanking';
 import type { SearchResponse, NormalizedCard } from './types';
+import { mapTcgdexToNormalizedDraft, resolveTcgdexImageUrl, tcgdexCardSchema } from '@/lib/metadata/adapter/tcgdexMapper';
+import { normalizeCardMetadata } from '@/lib/metadata/normalizer/metadataNormalizer';
+import { validateNormalizedCard } from '@/lib/metadata/validator/normalizedCardValidator';
 
 const COOL_PICKS_PRIMARY_EXCLUSION_COUNT = 8;
 const MAX_RESULTS = 24;
@@ -11,6 +14,8 @@ const DEFAULT_DAMAGE_INTENT_CANDIDATE_POOL_LIMIT = 150;
 const DEFAULT_TCGDEX_DETAIL_CONCURRENCY = 8;
 
 const debugEnabled = /^(1|true|yes|on)$/i.test(process.env.POKEMON_API_DEBUG ?? '');
+
+export { resolveTcgdexImageUrl };
 
 function debugLog(message: string, meta?: Record<string, unknown>) {
   if (!debugEnabled) return;
@@ -212,31 +217,7 @@ const tcgdexCardListSchema = z.array(
   })
 );
 
-const tcgdexCardSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  image: z.string().optional(),
-  set: z.object({ name: z.string().optional() }).optional(),
-  category: z.string().optional(),
-  types: z.array(z.string()).optional(),
-  hp: z.union([z.string(), z.number()]).optional(),
-  abilities: z
-    .array(
-      z.object({
-        effect: z.string().optional(),
-      })
-    )
-    .optional(),
-  attacks: z
-    .array(
-      z.object({
-        name: z.string().optional(),
-        damage: z.union([z.string(), z.number()]).optional(),
-        effect: z.string().optional(),
-      })
-    )
-    .optional(),
-});
+// tcgdexCardSchema moved to metadata adapter module.
 
 async function fetchFromPokemonTcg(userQuery: string, config: ProviderRuntimeConfig): Promise<NormalizedCard[]> {
   const apiKey = process.env.POKEMON_TCG_API_KEY;
@@ -302,35 +283,10 @@ async function fetchFromPokemonTcg(userQuery: string, config: ProviderRuntimeCon
   return result.value.data.map(normalizeCard);
 }
 
-export function resolveTcgdexImageUrl(image?: string): string {
-  if (!image) return '';
-
-  // TCGdex often returns an asset base path without extension/quality.
-  // Example: https://assets.tcgdex.net/en/lc/lc/5
-  // Renderable card assets require a variant path such as /high.webp.
-  if (/\.[a-z0-9]+$/i.test(image) || /\/(high|low)\.(webp|jpg|jpeg|png)$/i.test(image)) {
-    return image;
-  }
-
-  return `${image.replace(/\/$/, '')}/high.webp`;
-}
-
 function normalizeTcgdexCard(card: z.infer<typeof tcgdexCardSchema>): NormalizedCard {
-  return {
-    id: card.id,
-    name: card.name,
-    image: resolveTcgdexImageUrl(card.image),
-    setName: card.set?.name ?? 'Unknown Set',
-    supertype: card.category ?? 'Unknown',
-    types: card.types ?? [],
-    hp: card.hp != null ? String(card.hp) : undefined,
-    abilityText: card.abilities?.[0]?.effect,
-    attacks: (card.attacks ?? []).map((attack) => ({
-      name: attack.name ?? 'Attack',
-      damage: attack.damage != null ? String(attack.damage) : undefined,
-      text: attack.effect,
-    })),
-  };
+  const normalized = normalizeCardMetadata(mapTcgdexToNormalizedDraft(card));
+  const validation = validateNormalizedCard(normalized);
+  return validation.card;
 }
 
 function buildTcgdexTerms(input: string): string[] {

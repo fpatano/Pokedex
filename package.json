@@ -10,7 +10,9 @@
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "verify:live": "node scripts/verify-live-search.mjs"
+    "verify:live": "node scripts/verify-live-search.mjs",
+    "eval:dexter40": "tsx scripts/eval-dexter40.ts",
+    "quality:report": "tsx scripts/quality-report.ts"
   },
   "dependencies": {
     "next": "^15.1.6",
@@ -31,6 +33,7 @@
     "jsdom": "^26.0.0",
     "postcss": "^8.5.1",
     "tailwindcss": "^3.4.17",
+    "tsx": "^4.20.5",
     "typescript": "^5.7.3",
     "vitest": "^3.0.5"
   }

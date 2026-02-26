@@ -84,6 +84,8 @@ Sprint handoff workflow docs:
 - `npm run lint` — run ESLint
 - `npm run build` — build production bundle
 - `npm run verify:live` — boot local app on a test port and verify live `/api/search` behavior
+- `npm run eval:dexter40` — run deterministic Dexter 40-query regression harness
+- `npm run quality:report` — print metadata pipeline quality report (mapping/validation/query metrics)
 
 ### Live verification
 
@@ -119,6 +121,7 @@ The script validates:
 - **Support libs:**
   - `lib/queryParser.ts` (query shaping for Pokémon TCG API)
   - `lib/normalize.ts` (payload normalization)
+  - `lib/metadata/schema|adapter|normalizer|validator|eval` (v1 metadata pipeline)
   - `lib/coolPicks.ts` (relevance + dedupe)
   - `lib/cache.ts` (60s in-memory query cache)
 
