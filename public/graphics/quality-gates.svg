@@ -1,0 +1,6 @@
+<svg width="1200" height="240" viewBox="0 0 1200 240" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="240" fill="#0b1120"/>
+  <text x="30" y="45" fill="#e2e8f0" font-size="28" font-family="Arial">Quality Gate Relay</text>
+  <text x="30" y="90" fill="#93c5fd" font-size="22" font-family="Arial">Pam → Archy → Lexy → Gino → Andy → Moss → Roy → Tron</text>
+  <text x="30" y="130" fill="#94a3b8" font-size="18" font-family="Arial">Outcome over checkboxes: functionality, clarity, confidence, maintainability</text>
+</svg>

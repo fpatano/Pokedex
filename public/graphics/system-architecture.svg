@@ -1,0 +1,22 @@
+<svg width="1200" height="580" viewBox="0 0 1200 580" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="580" fill="#020617"/>
+  <text x="40" y="52" fill="#e2e8f0" font-size="28" font-family="Arial">System Architecture (v1)</text>
+  <rect x="80" y="120" width="260" height="100" rx="12" fill="#1e293b" stroke="#38bdf8"/>
+  <text x="105" y="175" fill="#cbd5e1" font-size="20" font-family="Arial">SearchClient UI</text>
+  <rect x="460" y="80" width="280" height="80" rx="12" fill="#1e293b" stroke="#a78bfa"/>
+  <text x="490" y="128" fill="#cbd5e1" font-size="18" font-family="Arial">GET /api/search</text>
+  <rect x="460" y="190" width="280" height="80" rx="12" fill="#1e293b" stroke="#a78bfa"/>
+  <text x="488" y="238" fill="#cbd5e1" font-size="18" font-family="Arial">POST /api/coach</text>
+  <rect x="460" y="300" width="280" height="80" rx="12" fill="#1e293b" stroke="#a78bfa"/>
+  <text x="470" y="348" fill="#cbd5e1" font-size="18" font-family="Arial">POST /api/decision-card</text>
+  <rect x="840" y="80" width="280" height="120" rx="12" fill="#111827" stroke="#22d3ee"/>
+  <text x="865" y="135" fill="#cbd5e1" font-size="18" font-family="Arial">Provider + Normalization</text>
+  <rect x="840" y="240" width="280" height="140" rx="12" fill="#111827" stroke="#22d3ee"/>
+  <text x="865" y="300" fill="#cbd5e1" font-size="18" font-family="Arial">Coach + Decision Engines</text>
+  <line x1="340" y1="170" x2="460" y2="120" stroke="#64748b" stroke-width="3"/>
+  <line x1="340" y1="170" x2="460" y2="230" stroke="#64748b" stroke-width="3"/>
+  <line x1="340" y1="170" x2="460" y2="340" stroke="#64748b" stroke-width="3"/>
+  <line x1="740" y1="120" x2="840" y2="140" stroke="#64748b" stroke-width="3"/>
+  <line x1="740" y1="230" x2="840" y2="300" stroke="#64748b" stroke-width="3"/>
+  <line x1="740" y1="340" x2="840" y2="340" stroke="#64748b" stroke-width="3"/>
+</svg>

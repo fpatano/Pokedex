@@ -1,0 +1,13 @@
+<svg width="1200" height="520" viewBox="0 0 1200 520" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="520" fill="#0f172a"/>
+  <text x="40" y="52" fill="#e2e8f0" font-size="28" font-family="Arial">Pokédex UX Flow (v1)</text>
+  <rect x="60" y="100" width="320" height="90" rx="12" fill="#1e293b" stroke="#6366f1"/>
+  <text x="80" y="150" fill="#cbd5e1" font-size="20" font-family="Arial">Search Tab</text>
+  <rect x="440" y="100" width="320" height="90" rx="12" fill="#1e293b" stroke="#8b5cf6"/>
+  <text x="460" y="150" fill="#cbd5e1" font-size="20" font-family="Arial">Coach Tab</text>
+  <rect x="820" y="100" width="320" height="90" rx="12" fill="#1e293b" stroke="#06b6d4"/>
+  <text x="840" y="150" fill="#cbd5e1" font-size="20" font-family="Arial">Collection Tab</text>
+  <rect x="60" y="280" width="1080" height="150" rx="12" fill="#111827" stroke="#334155"/>
+  <text x="90" y="330" fill="#94a3b8" font-size="18" font-family="Arial">Global status banner region (loading / success / error + recovery action)</text>
+  <text x="90" y="365" fill="#94a3b8" font-size="18" font-family="Arial">Principle: one primary user job per view, progressive disclosure for advanced controls</text>
+</svg>
