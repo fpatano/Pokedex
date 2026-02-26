@@ -42,6 +42,27 @@ async function persistCollection(entries: CollectionEntry[]) {
   window.localStorage.setItem(COLLECTION_STORAGE_KEY, JSON.stringify(entries));
 }
 
+async function readJsonSafely(res: Response) {
+  const maybeJson = (res as unknown as { json?: () => Promise<unknown> }).json;
+  const maybeText = (res as unknown as { text?: () => Promise<string> }).text;
+
+  if (typeof maybeJson === 'function') {
+    return await maybeJson.call(res);
+  }
+
+  if (typeof maybeText === 'function') {
+    const text = await maybeText.call(res);
+    if (!text) return null;
+    try {
+      return JSON.parse(text);
+    } catch {
+      throw new Error('Server returned invalid JSON');
+    }
+  }
+
+  throw new Error('Server returned unreadable response');
+}
+
 export default function SearchClient() {
   const [query, setQuery] = useState('');
   const [data, setData] = useState<SearchResponse | null>(null);
@@ -58,6 +79,7 @@ export default function SearchClient() {
   const [coachError, setCoachError] = useState<string | null>(null);
   const [decisionCard, setDecisionCard] = useState<DecisionCardResponse | null>(null);
   const [decisionCardError, setDecisionCardError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'search' | 'coach' | 'collection'>('search');
 
   const [collection, setCollection] = useState<CollectionEntry[]>([]);
   const [collectionError, setCollectionError] = useState<string | null>(null);
@@ -110,10 +132,10 @@ export default function SearchClient() {
 
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(assistedQuery)}`, { signal: controller.signal });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error ?? 'Search failed');
+        const json = await readJsonSafely(res);
+        if (!res.ok) throw new Error((json as { error?: string } | null)?.error ?? 'Search failed');
 
-        if (shouldApplyResponse(requestId, requestSequenceRef.current)) setData(json as SearchResponse);
+        if (shouldApplyResponse(requestId, requestSequenceRef.current)) setData((json ?? { results: [], optimizationCopy: [], recommendations: [], coolPicks: [] }) as SearchResponse);
       } catch (e) {
         if (e instanceof DOMException && e.name === 'AbortError') return;
 
@@ -153,8 +175,8 @@ export default function SearchClient() {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    const decisionJson = await decisionRes.json();
-    if (!decisionRes.ok) throw new Error(decisionJson.error ?? 'Decision card request failed');
+    const decisionJson = await readJsonSafely(decisionRes);
+    if (!decisionRes.ok) throw new Error((decisionJson as { error?: string } | null)?.error ?? 'Decision card request failed');
     setDecisionCard(decisionJson as DecisionCardResponse);
   }
 
@@ -175,11 +197,11 @@ export default function SearchClient() {
           },
         }),
       });
-      const json = await res.json();
+      const json = await readJsonSafely(res);
       const headerVariant = res.headers?.get('x-coach-variant');
       const resolvedVariant = headerVariant;
       setCoachVariant(resolvedVariant === 'tournament' || resolvedVariant === 'standard' ? resolvedVariant : null);
-      if (!res.ok) throw new Error(json.error ?? 'Coach request failed');
+      if (!res.ok) throw new Error((json as { error?: string } | null)?.error ?? 'Coach request failed');
       const coach = json as CoachResponse;
       setCoachResult(coach);
 
@@ -287,6 +309,24 @@ export default function SearchClient() {
     <main className="mx-auto max-w-6xl p-6">
       <h1 className="mb-2 text-3xl font-bold">Pokédex Search</h1>
       <p className="mb-4 text-sm text-slate-300">Find Pokémon TCG cards, then open card details for set/type/hp/ability/attacks.</p>
+
+      <div className="mb-4 flex flex-wrap gap-2 rounded border border-slate-700 bg-slate-900 p-2">
+        {[
+          { id: 'search', label: 'Search' },
+          { id: 'coach', label: 'Coach' },
+          { id: 'collection', label: 'Collection' },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as 'search' | 'coach' | 'collection')}
+            className={`rounded px-3 py-2 text-sm font-semibold ${
+              activeTab === tab.id ? 'bg-indigo-600 text-white' : 'border border-slate-600 text-slate-300 hover:bg-slate-800'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
       <section className="mb-4 rounded border border-violet-500/40 bg-slate-900 p-4" data-testid="coach-demo">
         <h2 className="text-lg font-semibold">Coach Core Demo (v1)</h2>
