@@ -19,6 +19,8 @@ Pam -> Archy -> Lexy -> Gino -> Andy -> Moss -> Roy -> Tron
 - Error states include explicit recovery action
 - UI tests + build pass
 - README includes at least one architecture/flow graphic
+- Live-path intent works end-to-end for primary flows (no default/fallback substitution counted as success)
+- Fallback/sample data is never presented as normal recommendation content
 
 ## Risks
 - Over-correcting with visual complexity
