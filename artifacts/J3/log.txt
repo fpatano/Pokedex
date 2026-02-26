@@ -1,0 +1,7 @@
+journey=J3
+correlation_id=J3-8bf5bcec72915a82
+decision_trace_id=8bf5bcec72915a82
+state=NOT_READY_YET
+confidence=0.51
+passed=true
+timestamp=2026-02-26T06:36:47.107Z

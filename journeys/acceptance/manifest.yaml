@@ -1,0 +1,127 @@
+journeys:
+  - journeyId: J1
+    steps:
+      - call buildDecisionCard with tournament-ready input
+    assertions:
+      - state == TOURNAMENT_READY
+      - blocking_issues length == 0
+    negativeAssertions:
+      - state != PLAYABLE_NOW
+      - state != NOT_READY_YET
+    evidenceArtifacts:
+      - artifacts/J1/result.json
+      - artifacts/J1/response.json
+      - artifacts/J1/log.txt
+  - journeyId: J2
+    steps:
+      - call buildDecisionCard with playable-now thresholds met
+    assertions:
+      - state == PLAYABLE_NOW
+    negativeAssertions:
+      - state != TOURNAMENT_READY
+      - state != NOT_READY_YET
+    evidenceArtifacts:
+      - artifacts/J2/result.json
+      - artifacts/J2/response.json
+      - artifacts/J2/log.txt
+  - journeyId: J3
+    steps:
+      - call buildDecisionCard with below-threshold readiness input
+    assertions:
+      - state == NOT_READY_YET
+      - blocking_issues length > 0
+    negativeAssertions:
+      - state != TOURNAMENT_READY
+      - state != PLAYABLE_NOW
+    evidenceArtifacts:
+      - artifacts/J3/result.json
+      - artifacts/J3/response.json
+      - artifacts/J3/log.txt
+  - journeyId: J4
+    steps:
+      - call buildDecisionCard and inspect ranked reasons
+    assertions:
+      - top_reasons length == 3
+      - each top reason contains evidence_ref
+    negativeAssertions:
+      - no empty evidence_ref in top_reasons
+    evidenceArtifacts:
+      - artifacts/J4/result.json
+      - artifacts/J4/response.json
+      - artifacts/J4/log.txt
+  - journeyId: J5
+    steps:
+      - call buildDecisionCard and inspect confidence
+    assertions:
+      - confidence in [0.1, 0.95]
+      - confidence has two-decimal precision
+    negativeAssertions:
+      - confidence is NaN
+      - confidence out of configured bounds
+    evidenceArtifacts:
+      - artifacts/J5/result.json
+      - artifacts/J5/response.json
+      - artifacts/J5/log.txt
+  - journeyId: J6
+    steps:
+      - call buildDecisionCard twice with identical input
+    assertions:
+      - first response deep-equals second response
+    negativeAssertions:
+      - repeat input produces divergent response
+    evidenceArtifacts:
+      - artifacts/J6/result.json
+      - artifacts/J6/response.json
+      - artifacts/J6/log.txt
+  - journeyId: J7
+    steps:
+      - call buildDecisionCard on blocked path
+    assertions:
+      - state == NOT_READY_YET
+      - blocking_issues length > 0
+      - next_actions length > 0
+    negativeAssertions:
+      - empty next_actions on blocked path
+    evidenceArtifacts:
+      - artifacts/J7/result.json
+      - artifacts/J7/response.json
+      - artifacts/J7/log.txt
+  - journeyId: J8
+    steps:
+      - call buildDecisionCard and compare explainability mirrors
+    assertions:
+      - explainability.reason_codes matches top_reasons.reason_code
+      - explainability.evidence_refs matches top_reasons.evidence_ref
+      - explainability.recommended_next_actions matches next_actions
+    negativeAssertions:
+      - explainability arrays diverge from response arrays
+    evidenceArtifacts:
+      - artifacts/J8/result.json
+      - artifacts/J8/response.json
+      - artifacts/J8/log.txt
+  - journeyId: J9
+    steps:
+      - call buildDecisionCard twice with identical input
+      - validate decision_trace_id format and stability
+    assertions:
+      - decision_trace_id matches ^[a-f0-9]{16}$
+      - decision_trace_id stable across repeated calls
+    negativeAssertions:
+      - decision_trace_id drift for identical payload
+    evidenceArtifacts:
+      - artifacts/J9/result.json
+      - artifacts/J9/response.json
+      - artifacts/J9/log.txt
+  - journeyId: J10
+    steps:
+      - call buildDecisionCard on high-readiness path
+    assertions:
+      - state is one of TOURNAMENT_READY|PLAYABLE_NOW|NOT_READY_YET
+      - state type is string
+    negativeAssertions:
+      - multi-state response payload
+    evidenceArtifacts:
+      - artifacts/J10/result.json
+      - artifacts/J10/response.json
+      - artifacts/J10/log.txt
+      - artifacts/journey-matrix.json

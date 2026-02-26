@@ -1,0 +1,74 @@
+{
+  "journeyId": "J9",
+  "passed": true,
+  "correlationId": "J9-e2ce950511dabf9d",
+  "decisionTraceId": "e2ce950511dabf9d",
+  "state": "PLAYABLE_NOW",
+  "confidence": 0.76,
+  "assertionError": null,
+  "response": {
+    "decision_card_version": "v1",
+    "state": "PLAYABLE_NOW",
+    "confidence": 0.76,
+    "top_reasons": [
+      {
+        "reason_code": "R_REPS",
+        "reason": "Games played: 10.",
+        "evidence_ref": "input.gamesPlayed",
+        "rank": 1
+      },
+      {
+        "reason_code": "R_WINRATE",
+        "reason": "Observed win rate: 50%.",
+        "evidence_ref": "input.winRate",
+        "rank": 2
+      },
+      {
+        "reason_code": "R_CONSISTENCY",
+        "reason": "Consistency score: 0.56.",
+        "evidence_ref": "input.consistencyScore",
+        "rank": 3
+      }
+    ],
+    "blocking_issues": [],
+    "next_actions": [
+      "Increase reps to 25+ games before event lock.",
+      "Document sideboard plan for common matchups.",
+      "Lift consistency and rules scores via focused drills."
+    ],
+    "explainability": {
+      "reason_codes": [
+        "R_REPS",
+        "R_WINRATE",
+        "R_CONSISTENCY"
+      ],
+      "human_reasons": [
+        "Games played: 10.",
+        "Observed win rate: 50%.",
+        "Consistency score: 0.56."
+      ],
+      "evidence_refs": [
+        "input.gamesPlayed",
+        "input.winRate",
+        "input.consistencyScore"
+      ],
+      "confidence_basis": "base=0.72, blockers=0, signal_coverage=4/4",
+      "blocked_by": [],
+      "recommended_next_actions": [
+        "Increase reps to 25+ games before event lock.",
+        "Document sideboard plan for common matchups.",
+        "Lift consistency and rules scores via focused drills."
+      ],
+      "decision_trace_id": "e2ce950511dabf9d"
+    }
+  },
+  "input": {
+    "hasDecklist": true,
+    "hasSideboardPlan": false,
+    "gamesPlayed": 10,
+    "winRate": 0.5,
+    "consistencyScore": 0.56,
+    "rulesKnowledgeScore": 0.6,
+    "unresolvedBlockingIssues": []
+  }
+}

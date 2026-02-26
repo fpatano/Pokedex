@@ -1,0 +1,7 @@
+journey=J5
+correlation_id=J5-e2ce950511dabf9d
+decision_trace_id=e2ce950511dabf9d
+state=PLAYABLE_NOW
+confidence=0.76
+passed=true
+timestamp=2026-02-26T06:36:47.109Z

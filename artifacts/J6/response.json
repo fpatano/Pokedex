@@ -1,0 +1,56 @@
+{
+  "decision_card_version": "v1",
+  "state": "PLAYABLE_NOW",
+  "confidence": 0.76,
+  "top_reasons": [
+    {
+      "reason_code": "R_REPS",
+      "reason": "Games played: 8.",
+      "evidence_ref": "input.gamesPlayed",
+      "rank": 1
+    },
+    {
+      "reason_code": "R_WINRATE",
+      "reason": "Observed win rate: 45%.",
+      "evidence_ref": "input.winRate",
+      "rank": 2
+    },
+    {
+      "reason_code": "R_CONSISTENCY",
+      "reason": "Consistency score: 0.50.",
+      "evidence_ref": "input.consistencyScore",
+      "rank": 3
+    }
+  ],
+  "blocking_issues": [],
+  "next_actions": [
+    "Increase reps to 25+ games before event lock.",
+    "Document sideboard plan for common matchups.",
+    "Lift consistency and rules scores via focused drills."
+  ],
+  "explainability": {
+    "reason_codes": [
+      "R_REPS",
+      "R_WINRATE",
+      "R_CONSISTENCY"
+    ],
+    "human_reasons": [
+      "Games played: 8.",
+      "Observed win rate: 45%.",
+      "Consistency score: 0.50."
+    ],
+    "evidence_refs": [
+      "input.gamesPlayed",
+      "input.winRate",
+      "input.consistencyScore"
+    ],
+    "confidence_basis": "base=0.72, blockers=0, signal_coverage=4/4",
+    "blocked_by": [],
+    "recommended_next_actions": [
+      "Increase reps to 25+ games before event lock.",
+      "Document sideboard plan for common matchups.",
+      "Lift consistency and rules scores via focused drills."
+    ],
+    "decision_trace_id": "de5034b50d483e76"
+  }
+}

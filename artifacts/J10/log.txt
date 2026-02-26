@@ -1,0 +1,7 @@
+journey=J10
+correlation_id=J10-210f79500bbcb216
+decision_trace_id=210f79500bbcb216
+state=TOURNAMENT_READY
+confidence=0.92
+passed=true
+timestamp=2026-02-26T06:36:47.116Z

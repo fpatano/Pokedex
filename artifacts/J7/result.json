@@ -1,0 +1,92 @@
+{
+  "journeyId": "J7",
+  "passed": true,
+  "correlationId": "J7-8bf5bcec72915a82",
+  "decisionTraceId": "8bf5bcec72915a82",
+  "state": "NOT_READY_YET",
+  "confidence": 0.51,
+  "assertionError": null,
+  "response": {
+    "decision_card_version": "v1",
+    "state": "NOT_READY_YET",
+    "confidence": 0.51,
+    "top_reasons": [
+      {
+        "reason_code": "R_BLOCKERS",
+        "reason": "1 unresolved blocker(s).",
+        "evidence_ref": "input.unresolvedBlockingIssues",
+        "rank": 1
+      },
+      {
+        "reason_code": "R_DECKLIST",
+        "reason": "Decklist is not locked yet.",
+        "evidence_ref": "input.hasDecklist",
+        "rank": 2
+      },
+      {
+        "reason_code": "R_REPS",
+        "reason": "Games played: 2.",
+        "evidence_ref": "input.gamesPlayed",
+        "rank": 3
+      }
+    ],
+    "blocking_issues": [
+      "Missing locked decklist.",
+      "Missing sideboard plan for tournament rounds.",
+      "Insufficient reps: 2/8 minimum.",
+      "Win rate below playable threshold: 25%/45%.",
+      "Consistency score below playable threshold.",
+      "Rules knowledge below playable threshold.",
+      "Unresolved issue: Deck legality unresolved"
+    ],
+    "next_actions": [
+      "Lock a 60-card decklist and stop churn for 10 games.",
+      "Play at least 8 structured practice games.",
+      "Target >45% win rate in controlled testing before queueing events."
+    ],
+    "explainability": {
+      "reason_codes": [
+        "R_BLOCKERS",
+        "R_DECKLIST",
+        "R_REPS"
+      ],
+      "human_reasons": [
+        "1 unresolved blocker(s).",
+        "Decklist is not locked yet.",
+        "Games played: 2."
+      ],
+      "evidence_refs": [
+        "input.unresolvedBlockingIssues",
+        "input.hasDecklist",
+        "input.gamesPlayed"
+      ],
+      "confidence_basis": "base=0.64, blockers=7, signal_coverage=4/4",
+      "blocked_by": [
+        "Missing locked decklist.",
+        "Missing sideboard plan for tournament rounds.",
+        "Insufficient reps: 2/8 minimum.",
+        "Win rate below playable threshold: 25%/45%.",
+        "Consistency score below playable threshold.",
+        "Rules knowledge below playable threshold.",
+        "Unresolved issue: Deck legality unresolved"
+      ],
+      "recommended_next_actions": [
+        "Lock a 60-card decklist and stop churn for 10 games.",
+        "Play at least 8 structured practice games.",
+        "Target >45% win rate in controlled testing before queueing events."
+      ],
+      "decision_trace_id": "8bf5bcec72915a82"
+    }
+  },
+  "input": {
+    "hasDecklist": false,
+    "hasSideboardPlan": false,
+    "gamesPlayed": 2,
+    "winRate": 0.25,
+    "consistencyScore": 0.28,
+    "rulesKnowledgeScore": 0.32,
+    "unresolvedBlockingIssues": [
+      "Deck legality unresolved"
+    ]
+  }
+}

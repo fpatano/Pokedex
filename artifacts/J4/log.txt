@@ -1,0 +1,7 @@
+journey=J4
+correlation_id=J4-4052e7fc79f445a2
+decision_trace_id=4052e7fc79f445a2
+state=PLAYABLE_NOW
+confidence=0.76
+passed=true
+timestamp=2026-02-26T06:36:47.108Z
