@@ -53,6 +53,7 @@ export default function SearchClient() {
   const [retryNonce, setRetryNonce] = useState(0);
   const [coachPrompt, setCoachPrompt] = useState('fire deck highest damage 180');
   const [coachResult, setCoachResult] = useState<CoachResponse | null>(null);
+  const [coachVariant, setCoachVariant] = useState<'standard' | 'tournament' | null>(null);
   const [coachLoading, setCoachLoading] = useState(false);
   const [coachError, setCoachError] = useState<string | null>(null);
 
@@ -141,10 +142,14 @@ export default function SearchClient() {
         }),
       });
       const json = await res.json();
+      const headerVariant = res.headers?.get('x-coach-variant');
+      const resolvedVariant = headerVariant;
+      setCoachVariant(resolvedVariant === 'tournament' || resolvedVariant === 'standard' ? resolvedVariant : null);
       if (!res.ok) throw new Error(json.error ?? 'Coach request failed');
       setCoachResult(json as CoachResponse);
     } catch (e) {
       setCoachResult(null);
+      setCoachVariant(null);
       setCoachError(e instanceof Error ? e.message : 'Coach request failed');
     } finally {
       setCoachLoading(false);
@@ -289,6 +294,7 @@ export default function SearchClient() {
               <p>Confidence label: <span className="font-medium uppercase">{coachResult.confidenceLabel}</span></p>
               <p className="sm:col-span-2 text-xs text-slate-400">{confidenceLabelHelper}</p>
               <p className="break-all">Contract: <span className="font-medium">{coachResult.contractVersion}</span></p>
+              <p>Variant: <span className="font-medium">{coachVariant ?? 'unknown'}</span></p>
               <p>Archetype: <span className="font-medium">{coachResult.archetype ?? 'none (fallback)'}</span></p>
             </div>
 

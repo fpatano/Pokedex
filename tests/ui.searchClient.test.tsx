@@ -254,6 +254,7 @@ describe('SearchClient UI vertical slice', () => {
         if (parsed.intake?.objective === 'fire deck highest damage 180') {
           return {
             ok: true,
+            headers: { get: (name: string) => (name.toLowerCase() === 'x-coach-variant' ? 'tournament' : null) },
             json: async () => ({
               contractVersion: 'coach-core.v1',
               mode: 'coach',
@@ -288,6 +289,7 @@ describe('SearchClient UI vertical slice', () => {
 
         return {
           ok: true,
+          headers: { get: () => null },
           json: async () => ({
             contractVersion: 'coach-core.v1',
             mode: 'fallback',
@@ -356,9 +358,11 @@ describe('SearchClient UI vertical slice', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/Mode:/i)).toBeTruthy();
+      expect(screen.getByText(/Variant:/i)).toBeTruthy();
       expect(screen.getByText(/Archetype:/i)).toBeTruthy();
       expect(screen.getByText(/Plan title/i)).toBeTruthy();
       expect(screen.getByText(/AGGRO_TEMPO playable-now plan/i)).toBeTruthy();
+      expect(screen.getByText('tournament')).toBeTruthy();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /run fallback path/i }));
@@ -367,6 +371,7 @@ describe('SearchClient UI vertical slice', () => {
       expect(screen.getByText(/Mode:/i)).toBeTruthy();
       expect(screen.getByText(/Fallback explanation/i)).toBeTruthy();
       expect(screen.getByText(/Next action:/i)).toBeTruthy();
+      expect(screen.getByText('unknown')).toBeTruthy();
     });
   });
 });

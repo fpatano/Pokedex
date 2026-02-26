@@ -67,6 +67,24 @@ describe('Coach Core contract lock (M2)', () => {
     expect(response.fallbackReason).toBeNull();
   });
 
+  it('rejects undocumented meta key in coach-core.v1 response body (no drift repro)', () => {
+    const response = buildCoachResponse({
+      contractVersion: COACH_CORE_CONTRACT_VERSION,
+      intake: {
+        objective: 'fast attack damage with quick setup',
+        favoriteTypes: ['Lightning'],
+      },
+    });
+
+    const drifted = {
+      ...response,
+      meta: { variant: 'tournament' },
+    };
+
+    const parsed = CoachResponseSchema.safeParse(drifted);
+    expect(parsed.success).toBe(false);
+  });
+
   it('is deterministic for same payload/config', () => {
     const request = {
       contractVersion: COACH_CORE_CONTRACT_VERSION,

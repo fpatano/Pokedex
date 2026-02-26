@@ -8,6 +8,7 @@
     "clean:next": "./scripts/dev-cloud-clean-start.sh",
     "dev:cloud:clean": "npm run clean:next && npm run dev:cloud",
     "preflight:env": "node scripts/preflight-env-check.mjs",
+    "validate:tournament-env": "node scripts/validate-tournament-env.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
