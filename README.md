@@ -15,6 +15,20 @@ This project helps players move from **"I have a fuzzy idea"** to **"I can act o
 
 No mock catalog is used for search results—core card discovery uses real upstream providers.
 
+## Product UX snapshots
+
+### Core workflow map
+
+![UX flow](public/graphics/ux-flow.svg)
+
+### System architecture
+
+![System architecture](public/graphics/system-architecture.svg)
+
+### Quality gate relay
+
+![Quality gates](public/graphics/quality-gates.svg)
+
 ---
 
 ## Current status at a glance
