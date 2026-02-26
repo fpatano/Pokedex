@@ -1,8 +1,8 @@
 {
   "journeyId": "J1",
   "passed": true,
-  "correlationId": "J1-210f79500bbcb216",
-  "decisionTraceId": "210f79500bbcb216",
+  "correlationId": "J1-b72e706ac076ad0a",
+  "decisionTraceId": "b72e706ac076ad0a",
   "state": "TOURNAMENT_READY",
   "confidence": 0.92,
   "assertionError": null,
@@ -59,16 +59,18 @@
         "Submit list and sideboard notes to tournament tracker.",
         "Prepare mulligan and opener plan for top 3 matchups."
       ],
-      "decision_trace_id": "210f79500bbcb216"
+      "decision_trace_id": "b72e706ac076ad0a"
     }
   },
   "input": {
-    "hasDecklist": true,
-    "hasSideboardPlan": true,
-    "gamesPlayed": 30,
-    "winRate": 0.62,
-    "consistencyScore": 0.79,
-    "rulesKnowledgeScore": 0.83,
-    "unresolvedBlockingIssues": []
+    "input": {
+      "hasDecklist": true,
+      "hasSideboardPlan": true,
+      "gamesPlayed": 30,
+      "winRate": 0.62,
+      "consistencyScore": 0.79,
+      "rulesKnowledgeScore": 0.83,
+      "unresolvedBlockingIssues": []
+    }
   }
 }

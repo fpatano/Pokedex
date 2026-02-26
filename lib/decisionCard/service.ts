@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import rulesConfig from '@/lib/decisionCard/config.v1.json';
 import {
   DECISION_CARD_VERSION,
+  type DecisionCardRequest,
   type DecisionCardResponse,
   type DecisionInput,
   type DecisionState,
@@ -13,12 +14,66 @@ type RuleOutcome = {
   score: number;
 };
 
+type CanonicalCollectionItem = {
+  card_name: string;
+  canonical_name: string;
+  count: number;
+};
+
+type DeckRequirement = {
+  card_name: string;
+  required_count: number;
+};
+
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
 function toFixedConfidence(value: number): number {
   return Number(value.toFixed(2));
+}
+
+function normalizeName(name: string): string {
+  return name.trim().replace(/\s+/g, ' ');
+}
+
+function canonicalName(name: string): string {
+  return normalizeName(name).toLowerCase();
+}
+
+function displayNameFromCanonical(name: string): string {
+  return name
+    .split(' ')
+    .map((part) => (part.length === 0 ? part : part[0].toUpperCase() + part.slice(1)))
+    .join(' ');
+}
+
+function canonicalizeCollectionIntake(request: DecisionCardRequest): CanonicalCollectionItem[] {
+  const cards = request.collectionIntakePartial?.cards ?? [];
+  const byName = new Map<string, CanonicalCollectionItem>();
+
+  for (const card of cards) {
+    const normalized = normalizeName(card.card_name);
+    const canonical = canonicalName(normalized);
+    const current = byName.get(canonical);
+
+    if (current) {
+      current.count += card.count ?? 1;
+    } else {
+      byName.set(canonical, {
+        card_name: displayNameFromCanonical(canonical),
+        canonical_name: canonical,
+        count: card.count ?? 1,
+      });
+    }
+  }
+
+  return [...byName.values()].sort((a, b) => {
+    const byCanonical = a.canonical_name.localeCompare(b.canonical_name);
+    if (byCanonical !== 0) return byCanonical;
+    if (b.count !== a.count) return b.count - a.count;
+    return a.card_name.localeCompare(b.card_name);
+  });
 }
 
 function evaluateRules(input: DecisionInput): RuleOutcome[] {
@@ -139,7 +194,128 @@ function computeConfidence(state: DecisionState, input: DecisionInput, blockers:
   return toFixedConfidence(clamp(base + fullSignalBonus - penalty, rulesConfig.confidence.min, rulesConfig.confidence.max));
 }
 
-export function buildDecisionCard(input: DecisionInput): DecisionCardResponse {
+function deckTemplateByState(state: DecisionState): { core: DeckRequirement[]; upgrades: DeckRequirement[] } {
+  if (state === 'TOURNAMENT_READY') {
+    return {
+      core: [
+        { card_name: 'Quick Ball', required_count: 4 },
+        { card_name: 'Professor Research', required_count: 4 },
+        { card_name: 'Iono', required_count: 3 },
+      ],
+      upgrades: [
+        { card_name: 'Prime Catcher', required_count: 1 },
+        { card_name: 'Rare Candy', required_count: 2 },
+      ],
+    };
+  }
+
+  if (state === 'PLAYABLE_NOW') {
+    return {
+      core: [
+        { card_name: 'Quick Ball', required_count: 4 },
+        { card_name: 'Professor Research', required_count: 3 },
+        { card_name: 'Iono', required_count: 2 },
+      ],
+      upgrades: [
+        { card_name: 'Prime Catcher', required_count: 1 },
+        { card_name: 'Boss\'s Orders', required_count: 2 },
+      ],
+    };
+  }
+
+  return {
+    core: [
+      { card_name: 'Quick Ball', required_count: 4 },
+      { card_name: 'Professor Research', required_count: 2 },
+      { card_name: 'Iono', required_count: 1 },
+    ],
+    upgrades: [
+      { card_name: 'Boss\'s Orders', required_count: 2 },
+      { card_name: 'Rare Candy', required_count: 2 },
+    ],
+  };
+}
+
+type DeckSkeletonEntry = NonNullable<DecisionCardResponse['deckSkeleton']>['ownedCore'][number];
+type DeckSkeletonMissingEntry = NonNullable<DecisionCardResponse['deckSkeleton']>['missingCore'][number];
+
+function buildDeckSkeleton(state: DecisionState, topReasons: DecisionCardResponse['top_reasons'], canonicalCards: CanonicalCollectionItem[]) {
+  const intakeByCanonical = new Map(canonicalCards.map((card) => [card.canonical_name, card.count]));
+  const reasonPool = [...topReasons].sort((a, b) => a.rank - b.rank || a.reason_code.localeCompare(b.reason_code));
+  const { core, upgrades } = deckTemplateByState(state);
+
+  const decorate = (requirements: DeckRequirement[], withActions: boolean): Array<DeckSkeletonEntry | DeckSkeletonMissingEntry> =>
+    requirements
+      .map((requirement, index): DeckSkeletonEntry | DeckSkeletonMissingEntry => {
+        const canonical = canonicalName(requirement.card_name);
+        const ownedCount = intakeByCanonical.get(canonical) ?? 0;
+        const missingCount = Math.max(0, requirement.required_count - ownedCount);
+        const reason = reasonPool[index % reasonPool.length];
+
+        const base = {
+          card_name: requirement.card_name,
+          required_count: requirement.required_count,
+          owned_count: ownedCount,
+          missing_count: missingCount,
+          reason_code: reason.reason_code,
+          reason: reason.reason,
+          evidence_ref: reason.evidence_ref,
+        };
+
+        if (!withActions || missingCount === 0) return base;
+        return {
+          ...base,
+          action_text: `Acquire ${missingCount}x ${requirement.card_name} to close core gap (${reason.reason_code}).`,
+        };
+      })
+      .sort((a, b) => {
+        if (a.missing_count !== b.missing_count) return b.missing_count - a.missing_count;
+        if (a.required_count !== b.required_count) return b.required_count - a.required_count;
+        return a.card_name.localeCompare(b.card_name);
+      });
+
+  const coreRows = decorate(core, true);
+  const missingCore = coreRows.filter(
+    (row): row is DeckSkeletonMissingEntry => row.missing_count > 0 && 'action_text' in row
+  );
+  const ownedCore = coreRows.filter((row): row is DeckSkeletonEntry => row.missing_count === 0);
+
+  const optionalUpgrades = decorate(upgrades, false)
+    .filter((row): row is DeckSkeletonEntry => !('action_text' in row))
+    .sort((a, b) => {
+      if (a.missing_count !== b.missing_count) return a.missing_count - b.missing_count;
+      if (a.required_count !== b.required_count) return b.required_count - a.required_count;
+      return a.card_name.localeCompare(b.card_name);
+    });
+
+  return {
+    ownedCore,
+    missingCore,
+    optionalUpgrades,
+  };
+}
+
+function addGapActionability(baseActions: string[], missingCore: Array<{ card_name: string; missing_count: number; reason_code: string; evidence_ref: string }>): string[] {
+  if (missingCore.length === 0) return baseActions;
+
+  const gapSummary = missingCore
+    .slice(0, 2)
+    .map((item) => `${item.missing_count}x ${item.card_name}`)
+    .join(', ');
+  const evidenceSummary = missingCore
+    .slice(0, 2)
+    .map((item) => `${item.reason_code}@${item.evidence_ref}`)
+    .join(', ');
+
+  const gapAction = `Close collection gaps: acquire ${gapSummary}. Evidence: ${evidenceSummary}.`;
+  if (baseActions.includes(gapAction)) return baseActions;
+  return [gapAction, ...baseActions];
+}
+
+export function buildDecisionCard(requestOrInput: DecisionCardRequest | DecisionInput, options?: { includeDeckSkeleton?: boolean }): DecisionCardResponse {
+  const request: DecisionCardRequest = 'input' in requestOrInput ? requestOrInput : { input: requestOrInput };
+  const input = request.input;
+
   const state = resolveState(input);
   const blockers = state === 'NOT_READY_YET' ? buildBlockingIssues(input) : [];
   const reasons = buildReasons(state, input).slice(0, 3).map((reason, index) => ({
@@ -149,10 +325,18 @@ export function buildDecisionCard(input: DecisionInput): DecisionCardResponse {
     rank: index + 1,
   }));
 
-  const nextActions = buildNextActions(state, input);
   const confidence = computeConfidence(state, input, blockers);
+  const canonicalCollection = canonicalizeCollectionIntake(request);
+  const shouldBuildDeckSkeleton = Boolean(options?.includeDeckSkeleton);
+  const deckSkeleton = shouldBuildDeckSkeleton ? buildDeckSkeleton(state, reasons, canonicalCollection) : undefined;
+  const nextActions = deckSkeleton ? addGapActionability(buildNextActions(state, input), deckSkeleton.missingCore) : buildNextActions(state, input);
+
   const decisionTraceId = createHash('sha1')
-    .update(`${DECISION_CARD_VERSION}|${state}|${JSON.stringify(input)}|${JSON.stringify(reasons)}|${JSON.stringify(nextActions)}`)
+    .update(
+      `${DECISION_CARD_VERSION}|${state}|${JSON.stringify(input)}|${JSON.stringify(reasons)}|${JSON.stringify(nextActions)}|${JSON.stringify(
+        canonicalCollection
+      )}|${shouldBuildDeckSkeleton ? JSON.stringify(deckSkeleton) : 'deckSkeleton:disabled'}`
+    )
     .digest('hex')
     .slice(0, 16);
 
@@ -172,5 +356,6 @@ export function buildDecisionCard(input: DecisionInput): DecisionCardResponse {
       recommended_next_actions: nextActions,
       decision_trace_id: decisionTraceId,
     },
+    ...(deckSkeleton ? { deckSkeleton } : {}),
   };
 }

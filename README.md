@@ -43,6 +43,10 @@ No mock catalog is used for search results—core card discovery uses real upstr
     - [`docs/decision-card-v1-release-packet.md`](docs/decision-card-v1-release-packet.md)
     - [`docs/milestone-a-gate-signoff-2026-02-26.md`](docs/milestone-a-gate-signoff-2026-02-26.md)
 
+- **Milestone B sprint lock (partial collection + owned/missing deck skeleton)**
+  - Locked additive implementation scope, acceptance mapping (J8/J9/J10 + carryover actionability), and gate sequence.
+  - Reference: [`docs/MILESTONE-B-SPRINT-LOCK-v1.md`](docs/MILESTONE-B-SPRINT-LOCK-v1.md)
+
 ---
 
 ## Architecture (high-level)
@@ -212,7 +216,11 @@ See:
 
 - Locked `decision_card_version: "v1"`
 - Deterministic readiness engine + explainability payload
-- Header-level variant reflects v1 vs rollback-safe mode
+- Additive partial collection intake via `collectionIntakePartial`
+- Optional additive `deckSkeleton` artifact (`ownedCore`, `missingCore`, `optionalUpgrades`) gated by `DECK_SKELETON_V1_ENABLED`
+- Header-level variants:
+  - `x-decision-card-variant`: `v1` or `rollback-safe-default`
+  - `x-deck-skeleton-variant`: `v1` or `disabled`
 
 See: `docs/decision-card-v1-release-packet.md`
 
@@ -241,7 +249,7 @@ Journey/acceptance-relevant suites include:
 Additional release-focused checks:
 
 ```bash
-npm run test -- tests/decisionCard.route.test.ts tests/decisionCard.contract.test.ts tests/decisionCard.engine.test.ts tests/decisionCard.golden.test.ts
+npm run test -- tests/decisionCard.route.test.ts tests/decisionCard.contract.test.ts tests/decisionCard.engine.test.ts tests/decisionCard.golden.test.ts tests/decisionCard.deckSkeleton.golden.test.ts
 npm run verify:live
 ```
 
@@ -262,6 +270,10 @@ npm run verify:live
 - **Decision Card v1**
   - `DECISION_CARD_V1_ENABLED=true` (default) enables v1
   - set `false`/`0` for rollback-safe response variant
+
+- **Deck skeleton v1 (Milestone B)**
+  - `DECK_SKELETON_V1_ENABLED=true` enables additive `deckSkeleton` output
+  - set `false`/unset for disabled mode (`x-deck-skeleton-variant: disabled`)
 
 - **Tournament coach variant (M4)**
   - `TOURNAMENT_VARIANT_ENABLED=true` enables tournament hardening path

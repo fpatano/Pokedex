@@ -360,6 +360,42 @@ describe('SearchClient UI vertical slice', () => {
               recommended_next_actions: ['Run 5 focused reps vs mirror.', 'Document sideboard swaps for rounds 2-3.', 'Re-check mulligan map after reps.'],
               decision_trace_id: 'trace-test-123',
             },
+            deckSkeleton: {
+              ownedCore: [
+                {
+                  card_name: 'Charizard ex',
+                  required_count: 2,
+                  owned_count: 2,
+                  missing_count: 0,
+                  reason_code: 'CORE_LOCKED',
+                  reason: 'Core attacker is already owned.',
+                  evidence_ref: 'collection.charizard_ex',
+                },
+              ],
+              missingCore: [
+                {
+                  card_name: 'Rare Candy',
+                  required_count: 4,
+                  owned_count: 2,
+                  missing_count: 2,
+                  reason_code: 'CORE_GAP',
+                  reason: 'Evolution acceleration gap.',
+                  evidence_ref: 'collection.rare_candy',
+                  action_text: 'Acquire 2 Rare Candy.',
+                },
+              ],
+              optionalUpgrades: [
+                {
+                  card_name: 'Forest Seal Stone',
+                  required_count: 1,
+                  owned_count: 0,
+                  missing_count: 1,
+                  reason_code: 'UPGRADE_OPTION',
+                  reason: 'Consistency upgrade.',
+                  evidence_ref: 'upgrade.pool',
+                },
+              ],
+            },
           }),
         };
       }
@@ -397,6 +433,13 @@ describe('SearchClient UI vertical slice', () => {
       expect(screen.getByText('Top Reasons')).toBeTruthy();
       expect(screen.getByText('Blockers')).toBeTruthy();
       expect(screen.getByText('Next Actions')).toBeTruthy();
+      expect(screen.getByText('Deck Skeleton')).toBeTruthy();
+      expect(screen.getByText('ownedCore')).toBeTruthy();
+      expect(screen.getByText('missingCore')).toBeTruthy();
+      expect(screen.getByText('optionalUpgrades')).toBeTruthy();
+      expect(screen.getByText(/Charizard ex/)).toBeTruthy();
+      expect(screen.getByText(/Rare Candy/)).toBeTruthy();
+      expect(screen.getByText(/Forest Seal Stone/)).toBeTruthy();
     });
 
     const topReasonsList = screen.getByText('Top Reasons').nextElementSibling;

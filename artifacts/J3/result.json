@@ -1,8 +1,8 @@
 {
   "journeyId": "J3",
   "passed": true,
-  "correlationId": "J3-8bf5bcec72915a82",
-  "decisionTraceId": "8bf5bcec72915a82",
+  "correlationId": "J3-03c31fdf668f1e13",
+  "decisionTraceId": "03c31fdf668f1e13",
   "state": "NOT_READY_YET",
   "confidence": 0.51,
   "assertionError": null,
@@ -75,18 +75,20 @@
         "Play at least 8 structured practice games.",
         "Target >45% win rate in controlled testing before queueing events."
       ],
-      "decision_trace_id": "8bf5bcec72915a82"
+      "decision_trace_id": "03c31fdf668f1e13"
     }
   },
   "input": {
-    "hasDecklist": false,
-    "hasSideboardPlan": false,
-    "gamesPlayed": 2,
-    "winRate": 0.25,
-    "consistencyScore": 0.28,
-    "rulesKnowledgeScore": 0.32,
-    "unresolvedBlockingIssues": [
-      "Deck legality unresolved"
-    ]
+    "input": {
+      "hasDecklist": false,
+      "hasSideboardPlan": false,
+      "gamesPlayed": 2,
+      "winRate": 0.25,
+      "consistencyScore": 0.28,
+      "rulesKnowledgeScore": 0.32,
+      "unresolvedBlockingIssues": [
+        "Deck legality unresolved"
+      ]
+    }
   }
 }

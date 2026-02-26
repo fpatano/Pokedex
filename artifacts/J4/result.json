@@ -1,8 +1,8 @@
 {
   "journeyId": "J4",
   "passed": true,
-  "correlationId": "J4-4052e7fc79f445a2",
-  "decisionTraceId": "4052e7fc79f445a2",
+  "correlationId": "J4-0a9f0eaf90462ae8",
+  "decisionTraceId": "0a9f0eaf90462ae8",
   "state": "PLAYABLE_NOW",
   "confidence": 0.76,
   "assertionError": null,
@@ -59,16 +59,18 @@
         "Document sideboard plan for common matchups.",
         "Lift consistency and rules scores via focused drills."
       ],
-      "decision_trace_id": "4052e7fc79f445a2"
+      "decision_trace_id": "0a9f0eaf90462ae8"
     }
   },
   "input": {
-    "hasDecklist": true,
-    "hasSideboardPlan": false,
-    "gamesPlayed": 14,
-    "winRate": 0.54,
-    "consistencyScore": 0.62,
-    "rulesKnowledgeScore": 0.66,
-    "unresolvedBlockingIssues": []
+    "input": {
+      "hasDecklist": true,
+      "hasSideboardPlan": false,
+      "gamesPlayed": 14,
+      "winRate": 0.54,
+      "consistencyScore": 0.62,
+      "rulesKnowledgeScore": 0.66,
+      "unresolvedBlockingIssues": []
+    }
   }
 }

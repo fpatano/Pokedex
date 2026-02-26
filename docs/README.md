@@ -14,9 +14,11 @@ Quick navigation for the Pokédex MVP docs.
 - **Coach M3 trust layer (additive):** [`COACH-M3-TRUST-LAYER-v1.md`](COACH-M3-TRUST-LAYER-v1.md)
 - **Decision Card v1 release packet:** [`decision-card-v1-release-packet.md`](decision-card-v1-release-packet.md)
 - **Milestone A gate signoff log:** [`milestone-a-gate-signoff-2026-02-26.md`](milestone-a-gate-signoff-2026-02-26.md)
+- **Milestone B sprint lock (partial collection + deck skeleton):** [`MILESTONE-B-SPRINT-LOCK-v1.md`](MILESTONE-B-SPRINT-LOCK-v1.md)
 
 ## Operations and release handoff
 
+- **Milestone B implementation handoff packet (Andy):** [`MILESTONE-B-HANDOFF-ANDY.md`](MILESTONE-B-HANDOFF-ANDY.md)
 - **M4 tournament handoff packet:** [`M4-TOURNAMENT-HANDOFF-ANDY.md`](M4-TOURNAMENT-HANDOFF-ANDY.md)
 - **Tournament ops runbook:** [`TOURNAMENT-OPS-RUNBOOK.md`](TOURNAMENT-OPS-RUNBOOK.md)
 - **Sprint handoff template:** [`SPRINT-HANDOFF-TEMPLATE.md`](SPRINT-HANDOFF-TEMPLATE.md)

@@ -12,6 +12,16 @@ function isDecisionCardEnabled(): boolean {
   return value !== '0' && value !== 'false';
 }
 
+function isDeckSkeletonEnabled(): boolean {
+  const value = process.env.DECK_SKELETON_V1_ENABLED;
+  return value === '1' || value === 'true';
+}
+
+function resolveDeckSkeletonVariant(options: { decisionCardEnabled: boolean; deckSkeletonEnabled: boolean }): 'v1' | 'disabled' {
+  if (!options.decisionCardEnabled) return 'disabled';
+  return options.deckSkeletonEnabled ? 'v1' : 'disabled';
+}
+
 export async function POST(req: NextRequest) {
   let body: unknown;
   try {
@@ -39,7 +49,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (!isDecisionCardEnabled()) {
+  const decisionCardEnabled = isDecisionCardEnabled();
+  const deckSkeletonEnabled = isDeckSkeletonEnabled();
+  const deckSkeletonVariant = resolveDeckSkeletonVariant({ decisionCardEnabled, deckSkeletonEnabled });
+
+  if (!decisionCardEnabled) {
     return NextResponse.json(
       {
         decision_card_version: DECISION_CARD_VERSION,
@@ -66,10 +80,13 @@ export async function POST(req: NextRequest) {
           decision_trace_id: 'rollback-v1-safe',
         },
       },
-      { status: 200, headers: { 'x-decision-card-variant': 'rollback-safe-default' } }
+      { status: 200, headers: { 'x-decision-card-variant': 'rollback-safe-default', 'x-deck-skeleton-variant': deckSkeletonVariant } }
     );
   }
 
-  const response = buildDecisionCard(parsed.data.input);
-  return NextResponse.json(DecisionCardResponseSchema.parse(response), { status: 200, headers: { 'x-decision-card-variant': 'v1' } });
+  const response = buildDecisionCard(parsed.data, { includeDeckSkeleton: deckSkeletonEnabled });
+  return NextResponse.json(DecisionCardResponseSchema.parse(response), {
+    status: 200,
+    headers: { 'x-decision-card-variant': 'v1', 'x-deck-skeleton-variant': deckSkeletonVariant },
+  });
 }

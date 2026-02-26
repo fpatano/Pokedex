@@ -1,0 +1,44 @@
+[
+  {
+    "id": "DS1-partial-gap",
+    "request": {
+      "input": {
+        "hasDecklist": true,
+        "hasSideboardPlan": false,
+        "gamesPlayed": 10,
+        "winRate": 0.5,
+        "consistencyScore": 0.56,
+        "rulesKnowledgeScore": 0.6,
+        "unresolvedBlockingIssues": []
+      },
+      "collectionIntakePartial": {
+        "cards": [
+          { "card_name": "Quick Ball", "count": 2 },
+          { "card_name": "Iono", "count": 1 }
+        ]
+      }
+    }
+  },
+  {
+    "id": "DS2-core-complete",
+    "request": {
+      "input": {
+        "hasDecklist": true,
+        "hasSideboardPlan": true,
+        "gamesPlayed": 30,
+        "winRate": 0.62,
+        "consistencyScore": 0.79,
+        "rulesKnowledgeScore": 0.83,
+        "unresolvedBlockingIssues": []
+      },
+      "collectionIntakePartial": {
+        "cards": [
+          { "card_name": "Quick Ball", "count": 4 },
+          { "card_name": "Professor Research", "count": 4 },
+          { "card_name": "Iono", "count": 3 },
+          { "card_name": "Prime Catcher", "count": 1 }
+        ]
+      }
+    }
+  }
+]

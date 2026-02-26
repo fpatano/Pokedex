@@ -146,41 +146,11 @@ describe('Decision Card journey acceptance mapping', () => {
     );
   });
 
-  it('J8 - explainability payload mirrors top reasons and actions', () => {
+  it('J8 - explainability payload mirrors top reasons and skeleton gaps', () => {
     runJourneyWithArtifacts(
       'J8',
       {
-        hasDecklist: true,
-        hasSideboardPlan: false,
-        gamesPlayed: 10,
-        winRate: 0.5,
-        consistencyScore: 0.56,
-        rulesKnowledgeScore: 0.6,
-        unresolvedBlockingIssues: [],
-      },
-      (response) => {
-        expect(response.explainability.reason_codes).toStrictEqual(response.top_reasons.map((r) => r.reason_code));
-        expect(response.explainability.evidence_refs).toStrictEqual(response.top_reasons.map((r) => r.evidence_ref));
-        expect(response.explainability.recommended_next_actions).toStrictEqual(response.next_actions);
-      }
-    );
-  });
-
-  it('J9 - decision trace id is deterministic 16-char hex', () => {
-    runJourneyWithArtifacts(
-      'J9',
-      {
-        hasDecklist: true,
-        hasSideboardPlan: false,
-        gamesPlayed: 10,
-        winRate: 0.5,
-        consistencyScore: 0.56,
-        rulesKnowledgeScore: 0.6,
-        unresolvedBlockingIssues: [],
-      },
-      (response) => {
-        expect(response.explainability.decision_trace_id).toMatch(/^[a-f0-9]{16}$/);
-        const again = runJourneyWithArtifacts('J9', {
+        input: {
           hasDecklist: true,
           hasSideboardPlan: false,
           gamesPlayed: 10,
@@ -188,28 +158,105 @@ describe('Decision Card journey acceptance mapping', () => {
           consistencyScore: 0.56,
           rulesKnowledgeScore: 0.6,
           unresolvedBlockingIssues: [],
-        }, () => {});
-        expect(again.explainability.decision_trace_id).toBe(response.explainability.decision_trace_id);
-      }
+        },
+        collectionIntakePartial: {
+          cards: [{ card_name: 'Quick Ball', count: 1 }],
+        },
+      },
+      (response) => {
+        expect(response.explainability.reason_codes).toStrictEqual(response.top_reasons.map((r) => r.reason_code));
+        expect(response.explainability.evidence_refs).toStrictEqual(response.top_reasons.map((r) => r.evidence_ref));
+        expect(response.explainability.recommended_next_actions).toStrictEqual(response.next_actions);
+        expect(response.deckSkeleton?.missingCore.length).toBeGreaterThan(0);
+        for (const gap of response.deckSkeleton?.missingCore ?? []) {
+          expect(response.explainability.reason_codes).toContain(gap.reason_code);
+          expect(response.explainability.evidence_refs).toContain(gap.evidence_ref);
+        }
+      },
+      { includeDeckSkeleton: true }
     );
   });
 
-  it('J10 - single state returned, never multi-card orchestration', () => {
+  it('J9 - decision trace id + deck skeleton are deterministic', () => {
+    runJourneyWithArtifacts(
+      'J9',
+      {
+        input: {
+          hasDecklist: true,
+          hasSideboardPlan: false,
+          gamesPlayed: 10,
+          winRate: 0.5,
+          consistencyScore: 0.56,
+          rulesKnowledgeScore: 0.6,
+          unresolvedBlockingIssues: [],
+        },
+        collectionIntakePartial: {
+          cards: [
+            { card_name: ' Quick  Ball ', count: 2 },
+            { card_name: 'Iono', count: 1 },
+            { card_name: 'quick ball', count: 1 },
+          ],
+        },
+      },
+      (response) => {
+        expect(response.explainability.decision_trace_id).toMatch(/^[a-f0-9]{16}$/);
+        const again = runJourneyWithArtifacts(
+          'J9',
+          {
+            input: {
+              hasDecklist: true,
+              hasSideboardPlan: false,
+              gamesPlayed: 10,
+              winRate: 0.5,
+              consistencyScore: 0.56,
+              rulesKnowledgeScore: 0.6,
+              unresolvedBlockingIssues: [],
+            },
+            collectionIntakePartial: {
+              cards: [
+                { card_name: 'Iono', count: 1 },
+                { card_name: 'Quick Ball', count: 3 },
+              ],
+            },
+          },
+          () => {},
+          { includeDeckSkeleton: true }
+        );
+        expect(again.explainability.decision_trace_id).toBe(response.explainability.decision_trace_id);
+        expect(again.deckSkeleton).toStrictEqual(response.deckSkeleton);
+      },
+      { includeDeckSkeleton: true }
+    );
+  });
+
+  it('J10 - single state returned, skeleton remains supportive detail only', () => {
     runJourneyWithArtifacts(
       'J10',
       {
-        hasDecklist: true,
-        hasSideboardPlan: true,
-        gamesPlayed: 30,
-        winRate: 0.62,
-        consistencyScore: 0.79,
-        rulesKnowledgeScore: 0.83,
-        unresolvedBlockingIssues: [],
+        input: {
+          hasDecklist: true,
+          hasSideboardPlan: true,
+          gamesPlayed: 30,
+          winRate: 0.62,
+          consistencyScore: 0.79,
+          rulesKnowledgeScore: 0.83,
+          unresolvedBlockingIssues: [],
+        },
+        collectionIntakePartial: {
+          cards: [
+            { card_name: 'Quick Ball', count: 4 },
+            { card_name: 'Professor Research', count: 4 },
+            { card_name: 'Iono', count: 3 },
+          ],
+        },
       },
       (response) => {
         expect(typeof response.state).toBe('string');
         expect(['TOURNAMENT_READY', 'PLAYABLE_NOW', 'NOT_READY_YET']).toContain(response.state);
-      }
+        expect(Array.isArray(response.deckSkeleton?.ownedCore)).toBe(true);
+        expect((response as unknown as { states?: string[] }).states).toBeUndefined();
+      },
+      { includeDeckSkeleton: true }
     );
   });
 });

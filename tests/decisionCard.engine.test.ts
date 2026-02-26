@@ -48,4 +48,41 @@ describe('Decision Card deterministic engine v1', () => {
 
     expect(second).toStrictEqual(first);
   });
+
+  it('canonicalizes partial intake and yields byte-identical deck skeleton', () => {
+    const requestA = {
+      input: {
+        hasDecklist: true,
+        hasSideboardPlan: false,
+        gamesPlayed: 10,
+        winRate: 0.5,
+        consistencyScore: 0.56,
+        rulesKnowledgeScore: 0.6,
+        unresolvedBlockingIssues: [],
+      },
+      collectionIntakePartial: {
+        cards: [
+          { card_name: ' quick   ball ', count: 1 },
+          { card_name: 'Quick Ball', count: 2 },
+          { card_name: 'Iono', count: 1 },
+        ],
+      },
+    };
+
+    const requestB = {
+      ...requestA,
+      collectionIntakePartial: {
+        cards: [
+          { card_name: 'Iono', count: 1 },
+          { card_name: 'Quick Ball', count: 3 },
+        ],
+      },
+    };
+
+    const first = buildDecisionCard(requestA, { includeDeckSkeleton: true });
+    const second = buildDecisionCard(requestB, { includeDeckSkeleton: true });
+
+    expect(second.deckSkeleton).toStrictEqual(first.deckSkeleton);
+    expect(second.explainability.decision_trace_id).toBe(first.explainability.decision_trace_id);
+  });
 });

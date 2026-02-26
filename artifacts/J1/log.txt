@@ -1,7 +1,7 @@
 journey=J1
-correlation_id=J1-210f79500bbcb216
-decision_trace_id=210f79500bbcb216
+correlation_id=J1-b72e706ac076ad0a
+decision_trace_id=b72e706ac076ad0a
 state=TOURNAMENT_READY
 confidence=0.92
 passed=true
-timestamp=2026-02-26T06:36:47.104Z
+timestamp=2026-02-26T07:06:16.380Z

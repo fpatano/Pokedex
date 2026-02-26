@@ -1,8 +1,8 @@
 {
   "journeyId": "J9",
   "passed": true,
-  "correlationId": "J9-e2ce950511dabf9d",
-  "decisionTraceId": "e2ce950511dabf9d",
+  "correlationId": "J9-6ee532134be695d9",
+  "decisionTraceId": "6ee532134be695d9",
   "state": "PLAYABLE_NOW",
   "confidence": 0.76,
   "assertionError": null,
@@ -32,6 +32,7 @@
     ],
     "blocking_issues": [],
     "next_actions": [
+      "Close collection gaps: acquire 3x Professor Research, 1x Quick Ball. Evidence: R_WINRATE@input.winRate, R_REPS@input.gamesPlayed.",
       "Increase reps to 25+ games before event lock.",
       "Document sideboard plan for common matchups.",
       "Lift consistency and rules scores via focused drills."
@@ -55,20 +56,94 @@
       "confidence_basis": "base=0.72, blockers=0, signal_coverage=4/4",
       "blocked_by": [],
       "recommended_next_actions": [
+        "Close collection gaps: acquire 3x Professor Research, 1x Quick Ball. Evidence: R_WINRATE@input.winRate, R_REPS@input.gamesPlayed.",
         "Increase reps to 25+ games before event lock.",
         "Document sideboard plan for common matchups.",
         "Lift consistency and rules scores via focused drills."
       ],
-      "decision_trace_id": "e2ce950511dabf9d"
+      "decision_trace_id": "6ee532134be695d9"
+    },
+    "deckSkeleton": {
+      "ownedCore": [],
+      "missingCore": [
+        {
+          "card_name": "Professor Research",
+          "required_count": 3,
+          "owned_count": 0,
+          "missing_count": 3,
+          "reason_code": "R_WINRATE",
+          "reason": "Observed win rate: 50%.",
+          "evidence_ref": "input.winRate",
+          "action_text": "Acquire 3x Professor Research to close core gap (R_WINRATE)."
+        },
+        {
+          "card_name": "Quick Ball",
+          "required_count": 4,
+          "owned_count": 3,
+          "missing_count": 1,
+          "reason_code": "R_REPS",
+          "reason": "Games played: 10.",
+          "evidence_ref": "input.gamesPlayed",
+          "action_text": "Acquire 1x Quick Ball to close core gap (R_REPS)."
+        },
+        {
+          "card_name": "Iono",
+          "required_count": 2,
+          "owned_count": 1,
+          "missing_count": 1,
+          "reason_code": "R_CONSISTENCY",
+          "reason": "Consistency score: 0.56.",
+          "evidence_ref": "input.consistencyScore",
+          "action_text": "Acquire 1x Iono to close core gap (R_CONSISTENCY)."
+        }
+      ],
+      "optionalUpgrades": [
+        {
+          "card_name": "Prime Catcher",
+          "required_count": 1,
+          "owned_count": 0,
+          "missing_count": 1,
+          "reason_code": "R_REPS",
+          "reason": "Games played: 10.",
+          "evidence_ref": "input.gamesPlayed"
+        },
+        {
+          "card_name": "Boss's Orders",
+          "required_count": 2,
+          "owned_count": 0,
+          "missing_count": 2,
+          "reason_code": "R_WINRATE",
+          "reason": "Observed win rate: 50%.",
+          "evidence_ref": "input.winRate"
+        }
+      ]
     }
   },
   "input": {
-    "hasDecklist": true,
-    "hasSideboardPlan": false,
-    "gamesPlayed": 10,
-    "winRate": 0.5,
-    "consistencyScore": 0.56,
-    "rulesKnowledgeScore": 0.6,
-    "unresolvedBlockingIssues": []
+    "input": {
+      "hasDecklist": true,
+      "hasSideboardPlan": false,
+      "gamesPlayed": 10,
+      "winRate": 0.5,
+      "consistencyScore": 0.56,
+      "rulesKnowledgeScore": 0.6,
+      "unresolvedBlockingIssues": []
+    },
+    "collectionIntakePartial": {
+      "cards": [
+        {
+          "card_name": " Quick  Ball ",
+          "count": 2
+        },
+        {
+          "card_name": "Iono",
+          "count": 1
+        },
+        {
+          "card_name": "quick ball",
+          "count": 1
+        }
+      ]
+    }
   }
 }

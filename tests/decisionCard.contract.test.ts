@@ -30,6 +30,17 @@ describe('Decision Card v1 contract lock', () => {
     expect(DecisionCardResponseSchema.parse(response)).toBeTruthy();
   });
 
+  it('accepts additive partial collection intake field', () => {
+    const parsed = DecisionCardRequestSchema.parse({
+      input: {},
+      collectionIntakePartial: {
+        cards: [{ card_name: ' Quick Ball ' }, { card_name: 'Iono', count: 2 }],
+      },
+    });
+
+    expect(parsed.collectionIntakePartial?.cards[0].count).toBe(1);
+  });
+
   it('enforces strict request shape', () => {
     const invalid = DecisionCardRequestSchema.safeParse({
       input: {

@@ -1,8 +1,8 @@
 {
   "journeyId": "J10",
   "passed": true,
-  "correlationId": "J10-210f79500bbcb216",
-  "decisionTraceId": "210f79500bbcb216",
+  "correlationId": "J10-fa83b3c8f4c672de",
+  "decisionTraceId": "fa83b3c8f4c672de",
   "state": "TOURNAMENT_READY",
   "confidence": 0.92,
   "assertionError": null,
@@ -59,16 +59,86 @@
         "Submit list and sideboard notes to tournament tracker.",
         "Prepare mulligan and opener plan for top 3 matchups."
       ],
-      "decision_trace_id": "210f79500bbcb216"
+      "decision_trace_id": "fa83b3c8f4c672de"
+    },
+    "deckSkeleton": {
+      "ownedCore": [
+        {
+          "card_name": "Professor Research",
+          "required_count": 4,
+          "owned_count": 4,
+          "missing_count": 0,
+          "reason_code": "R_CONSISTENCY",
+          "reason": "Consistency score: 0.79.",
+          "evidence_ref": "input.consistencyScore"
+        },
+        {
+          "card_name": "Quick Ball",
+          "required_count": 4,
+          "owned_count": 4,
+          "missing_count": 0,
+          "reason_code": "R_WINRATE",
+          "reason": "Observed win rate: 62%.",
+          "evidence_ref": "input.winRate"
+        },
+        {
+          "card_name": "Iono",
+          "required_count": 3,
+          "owned_count": 3,
+          "missing_count": 0,
+          "reason_code": "R_RULES",
+          "reason": "Rules knowledge score: 0.83.",
+          "evidence_ref": "input.rulesKnowledgeScore"
+        }
+      ],
+      "missingCore": [],
+      "optionalUpgrades": [
+        {
+          "card_name": "Prime Catcher",
+          "required_count": 1,
+          "owned_count": 0,
+          "missing_count": 1,
+          "reason_code": "R_WINRATE",
+          "reason": "Observed win rate: 62%.",
+          "evidence_ref": "input.winRate"
+        },
+        {
+          "card_name": "Rare Candy",
+          "required_count": 2,
+          "owned_count": 0,
+          "missing_count": 2,
+          "reason_code": "R_CONSISTENCY",
+          "reason": "Consistency score: 0.79.",
+          "evidence_ref": "input.consistencyScore"
+        }
+      ]
     }
   },
   "input": {
-    "hasDecklist": true,
-    "hasSideboardPlan": true,
-    "gamesPlayed": 30,
-    "winRate": 0.62,
-    "consistencyScore": 0.79,
-    "rulesKnowledgeScore": 0.83,
-    "unresolvedBlockingIssues": []
+    "input": {
+      "hasDecklist": true,
+      "hasSideboardPlan": true,
+      "gamesPlayed": 30,
+      "winRate": 0.62,
+      "consistencyScore": 0.79,
+      "rulesKnowledgeScore": 0.83,
+      "unresolvedBlockingIssues": []
+    },
+    "collectionIntakePartial": {
+      "cards": [
+        {
+          "card_name": "Quick Ball",
+          "count": 4
+        },
+        {
+          "card_name": "Professor Research",
+          "count": 4
+        },
+        {
+          "card_name": "Iono",
+          "count": 3
+        }
+      ]
+    }
   }
 }

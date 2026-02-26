@@ -1,7 +1,7 @@
 journey=J10
-correlation_id=J10-210f79500bbcb216
-decision_trace_id=210f79500bbcb216
+correlation_id=J10-fa83b3c8f4c672de
+decision_trace_id=fa83b3c8f4c672de
 state=TOURNAMENT_READY
 confidence=0.92
 passed=true
-timestamp=2026-02-26T06:36:47.116Z
+timestamp=2026-02-26T07:06:16.406Z

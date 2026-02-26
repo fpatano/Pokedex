@@ -1,6 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
-import type { DecisionCardResponse, DecisionInput } from '@/lib/decisionCard/contract';
+import type { DecisionCardRequest, DecisionCardResponse, DecisionInput } from '@/lib/decisionCard/contract';
 import { buildDecisionCard } from '@/lib/decisionCard/service';
 
 export type JourneyId = 'J1' | 'J2' | 'J3' | 'J4' | 'J5' | 'J6' | 'J7' | 'J8' | 'J9' | 'J10';
@@ -30,12 +30,18 @@ function writeMatrixFromArtifacts() {
   writeFileSync(path.join(artifactsRoot, 'journey-matrix.json'), JSON.stringify({ generatedAt: new Date().toISOString(), journeys: summary }, null, 2));
 }
 
-export function runJourneyWithArtifacts(journeyId: JourneyId, input: DecisionInput, assertion: (response: DecisionCardResponse) => void) {
+export function runJourneyWithArtifacts(
+  journeyId: JourneyId,
+  requestOrInput: DecisionInput | DecisionCardRequest,
+  assertion: (response: DecisionCardResponse) => void,
+  options?: { includeDeckSkeleton?: boolean }
+) {
   ensureDir(artifactsRoot);
   const journeyDir = path.join(artifactsRoot, journeyId);
   ensureDir(journeyDir);
 
-  const response = buildDecisionCard(input);
+  const request: DecisionCardRequest = 'input' in requestOrInput ? requestOrInput : { input: requestOrInput };
+  const response = buildDecisionCard(request, options);
   const correlationId = `${journeyId}-${response.explainability.decision_trace_id}`;
 
   let passed = true;
@@ -57,7 +63,7 @@ export function runJourneyWithArtifacts(journeyId: JourneyId, input: DecisionInp
       confidence: response.confidence,
       assertionError,
       response,
-      input,
+      input: request,
     };
 
     writeFileSync(path.join(journeyDir, 'result.json'), JSON.stringify(result, null, 2));

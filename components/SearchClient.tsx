@@ -417,6 +417,51 @@ export default function SearchClient() {
                     ))}
                   </ol>
                 </div>
+
+                {decisionCard.deckSkeleton && (
+                  <div className="mt-3 rounded border border-cyan-500/30 bg-cyan-950/10 p-3" data-testid="deck-skeleton-panel">
+                    <p className="text-sm font-semibold text-cyan-100">Deck Skeleton</p>
+
+                    <div className="mt-2">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-cyan-200">ownedCore</p>
+                      {decisionCard.deckSkeleton.ownedCore.length > 0 ? (
+                        <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-cyan-100">
+                          {decisionCard.deckSkeleton.ownedCore.map((entry) => (
+                            <li key={`owned-${entry.card_name}`} className="break-words">{entry.card_name} ({entry.owned_count}/{entry.required_count})</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="mt-1 text-sm text-cyan-200">None</p>
+                      )}
+                    </div>
+
+                    <div className="mt-2">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-cyan-200">missingCore</p>
+                      {decisionCard.deckSkeleton.missingCore.length > 0 ? (
+                        <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-cyan-100">
+                          {decisionCard.deckSkeleton.missingCore.map((entry) => (
+                            <li key={`missing-${entry.card_name}`} className="break-words">{entry.card_name} (need {entry.missing_count})</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="mt-1 text-sm text-cyan-200">None</p>
+                      )}
+                    </div>
+
+                    <div className="mt-2">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-cyan-200">optionalUpgrades</p>
+                      {decisionCard.deckSkeleton.optionalUpgrades.length > 0 ? (
+                        <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-cyan-100">
+                          {decisionCard.deckSkeleton.optionalUpgrades.map((entry) => (
+                            <li key={`upgrade-${entry.card_name}`} className="break-words">{entry.card_name}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="mt-1 text-sm text-cyan-200">None</p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
