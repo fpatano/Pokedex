@@ -9,6 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
+    "test:contract": "vitest run tests/contract.ui-backend-state.test.ts tests/apiShape.test.ts",
+    "test:ui": "vitest run tests/ui.searchClient.test.tsx",
     "test:watch": "vitest",
     "verify:live": "node scripts/verify-live-search.mjs",
     "eval:dexter40": "tsx scripts/eval-dexter40.ts",

@@ -4,6 +4,7 @@ import { normalizeCard } from './normalize';
 import { pickCoolCards } from './coolPicks';
 import { analyzeQueryIntent, rerankCardsForQuery } from './searchRanking';
 import type { SearchResponse, NormalizedCard } from './types';
+import { buildOptimizationCopy, issueRecommendations } from './recommendations';
 import { mapTcgdexToNormalizedDraft, resolveTcgdexImageUrl, tcgdexCardSchema } from '@/lib/metadata/adapter/tcgdexMapper';
 import { normalizeCardMetadata } from '@/lib/metadata/normalizer/metadataNormalizer';
 import { validateNormalizedCard } from '@/lib/metadata/validator/normalizedCardValidator';
@@ -460,12 +461,16 @@ export async function searchCards(userQuery: string): Promise<SearchResponse> {
         markFallbackSuccess();
       }
 
+      const recommendations = issueRecommendations(userQuery, finalResults);
+
       return {
         query: userQuery,
         results: finalResults,
         coolPicks: pickCoolCards(finalResults, userQuery, {
           excludedIds: finalResults.slice(0, COOL_PICKS_PRIMARY_EXCLUSION_COUNT).map((card) => card.id),
         }),
+        recommendations,
+        optimizationCopy: buildOptimizationCopy(userQuery, recommendations),
       };
     } catch (error) {
       lastError = error;
