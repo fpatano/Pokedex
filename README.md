@@ -80,6 +80,8 @@ Sprint handoff workflow docs:
 
 - `npm run dev` — run local dev server
 - `npm run dev:cloud` — run dev server on `0.0.0.0:3000` for Codespaces/mobile testing
+- `npm run dev:cloud:clean` — force clean-start (kills port `3000` listener + removes stale `.next` + restarts dev server)
+- `npm run preflight:env` — detect INVALID_ENV / missing Next chunk issue before UX runs
 - `npm run test` — run Vitest suite
 - `npm run lint` — run ESLint
 - `npm run build` — build production bundle
@@ -175,6 +177,11 @@ The script validates:
 - **`verify:live` fails with empty results**
   - Check internet connectivity (this check is live-upstream dependent)
   - Re-run; upstream availability can vary
+
+- **`GET /` or `/api/search` returns 500 with `Cannot find module './<n>.js'`**
+  - Run `npm run preflight:env` to detect this quickly
+  - If INVALID_ENV is reported, run `npm run dev:cloud:clean`
+  - Re-run preflight (and then UX test) once both `/` and `/api/search` are healthy
 
 - **Image domains or rendering concerns**
   - Current implementation uses `next/image` with `unoptimized` for MVP simplicity

@@ -12,6 +12,8 @@ function CardThumb({ src, alt }: { src: string; alt: string }) {
   return <Image src={src} alt={alt} width={245} height={342} unoptimized className="mb-2 h-auto w-full rounded" />;
 }
 
+const DEFAULT_DISCOVERY_QUERY = 'popular pokemon cards';
+
 export default function SearchClient() {
   const [query, setQuery] = useState('');
   const [data, setData] = useState<SearchResponse | null>(null);
@@ -20,18 +22,14 @@ export default function SearchClient() {
   const [selectedCard, setSelectedCard] = useState<NormalizedCard | null>(null);
   const [builderState, setBuilderState] = useState(createDefaultGuidedBuilderState());
   const [uiState, setUiState] = useState({ appliedRecommendationIds: [] as string[] });
+  const [retryNonce, setRetryNonce] = useState(0);
 
   const requestSequenceRef = useRef(0);
   const debouncedQuery = useMemo(() => query.trim(), [query]);
+  const hasUserQuery = debouncedQuery.length > 0;
+  const activeQuery = hasUserQuery ? debouncedQuery : DEFAULT_DISCOVERY_QUERY;
 
   useEffect(() => {
-    if (!debouncedQuery) {
-      setData(null);
-      setError(null);
-      setLoading(false);
-      return;
-    }
-
     const requestId = ++requestSequenceRef.current;
     const controller = new AbortController();
 
@@ -40,7 +38,7 @@ export default function SearchClient() {
       setError(null);
 
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(debouncedQuery)}`, { signal: controller.signal });
+        const res = await fetch(`/api/search?q=${encodeURIComponent(activeQuery)}`, { signal: controller.signal });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error ?? 'Search failed');
 
@@ -55,13 +53,13 @@ export default function SearchClient() {
       } finally {
         if (shouldApplyResponse(requestId, requestSequenceRef.current)) setLoading(false);
       }
-    }, 350);
+    }, hasUserQuery ? 350 : 0);
 
     return () => {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [debouncedQuery]);
+  }, [activeQuery, hasUserQuery, retryNonce]);
 
   function applyGuidedBuilder() {
     setQuery(buildGuidedQuery(builderState));
@@ -74,7 +72,8 @@ export default function SearchClient() {
 
   return (
     <main className="mx-auto max-w-6xl p-6">
-      <h1 className="mb-4 text-3xl font-bold">Pokémon TCG Finder</h1>
+      <h1 className="mb-2 text-3xl font-bold">Pokédex Search</h1>
+      <p className="mb-4 text-sm text-slate-300">Find Pokémon TCG cards, then open card details for set/type/hp/ability/attacks.</p>
 
       <section className="mb-5 rounded border border-indigo-500/40 bg-slate-900 p-4">
         <h2 className="text-lg font-semibold">Guided Builder (v1)</h2>
@@ -121,7 +120,11 @@ export default function SearchClient() {
         </div>
       </section>
 
+      <label htmlFor="search-query" className="mb-2 mt-4 block text-sm font-medium text-slate-200">
+        Search cards
+      </label>
       <input
+        id="search-query"
         aria-label="search-query"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
@@ -132,6 +135,19 @@ export default function SearchClient() {
       {loading && <p className="mt-4 text-slate-300">Searching cards...</p>}
       {error && <p className="mt-4 text-red-400">{error}</p>}
       {!loading && data && data.results.length === 0 && <p className="mt-4 text-slate-300">No cards found.</p>}
+
+      {data?.meta?.mode === 'fallback' && (
+        <section className="mt-4 rounded border border-amber-500/50 bg-amber-950/30 p-3 text-sm text-amber-200">
+          <p className="font-semibold">Fallback mode: showing local sample cards for testing.</p>
+          <p>{data.meta.message ?? 'Live Pokémon services are temporarily unavailable.'}</p>
+          <button
+            onClick={() => setRetryNonce((n) => n + 1)}
+            className="mt-2 rounded border border-amber-300/70 px-2 py-1 text-xs hover:bg-amber-400/10"
+          >
+            Retry live data
+          </button>
+        </section>
+      )}
 
       {data && data.optimizationCopy.length > 0 && (
         <section className="mt-6 rounded border border-amber-400/40 bg-slate-900 p-4">
@@ -160,7 +176,7 @@ export default function SearchClient() {
 
       {data && data.coolPicks.length > 0 && (
         <section className="mt-8">
-          <h2 className="mb-3 text-xl font-semibold">Cool Picks</h2>
+          <h2 className="mb-3 text-xl font-semibold">{hasUserQuery ? 'Cool Picks' : 'Cool Picks (default)'}</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {data.coolPicks.map((card) => (
               <article key={`cool-${card.id}`} className="rounded border border-emerald-500/40 bg-slate-800 p-3">
@@ -173,17 +189,22 @@ export default function SearchClient() {
         </section>
       )}
 
-      {data && data.results.length > 0 && (
+      {data && hasUserQuery && data.results.length > 0 && (
         <section className="mt-8">
           <h2 className="mb-3 text-xl font-semibold">Results</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {data.results.map((card) => (
-              <article key={card.id} className="rounded border border-slate-700 bg-slate-800 p-3">
-                <button className="w-full text-left" onClick={() => setSelectedCard(card)}>
+              <article key={card.id} data-testid="card" className="rounded border border-slate-700 bg-slate-800 p-3">
+                <button
+                  className="w-full text-left"
+                  onClick={() => setSelectedCard(card)}
+                  aria-label="View Details"
+                >
                   <CardThumb src={card.image} alt={card.name} />
                   <p className="font-medium">{card.name}</p>
                   <p className="text-sm text-slate-300">{card.setName}</p>
                   <p className="text-xs text-slate-400">{card.types.join(', ') || card.supertype}</p>
+                  <p className="mt-2 text-xs font-semibold text-indigo-300">View Details</p>
                 </button>
               </article>
             ))}
@@ -203,7 +224,7 @@ export default function SearchClient() {
             <p className="text-sm text-slate-300">Set: {selectedCard.setName}</p>
             <p className="text-sm text-slate-300">Type: {selectedCard.types.join(', ') || selectedCard.supertype}</p>
             <p className="text-sm text-slate-300">HP: {selectedCard.hp ?? 'N/A'}</p>
-            {selectedCard.abilityText && <p className="mt-2 text-sm text-emerald-300">Ability: {selectedCard.abilityText}</p>}
+            <p className="mt-2 text-sm text-emerald-300">Ability: {selectedCard.abilityText || 'N/A'}</p>
             <div className="mt-3">
               <h4 className="font-medium">Attacks</h4>
               {selectedCard.attacks.length === 0 ? (

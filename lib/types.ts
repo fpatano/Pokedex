@@ -19,4 +19,10 @@ export type SearchResponse = {
   coolPicks: NormalizedCard[];
   recommendations: Recommendation[];
   optimizationCopy: string[];
+  meta?: {
+    mode: 'live' | 'fallback';
+    source?: string;
+    message?: string;
+    retryable?: boolean;
+  };
 };

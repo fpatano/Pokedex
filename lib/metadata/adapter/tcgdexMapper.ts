@@ -21,7 +21,7 @@ export const tcgdexCardSchema = z
       )
       .optional(),
   })
-  .strict();
+  .passthrough();
 
 export type TcgdexCard = z.infer<typeof tcgdexCardSchema>;
 

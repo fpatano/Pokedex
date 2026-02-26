@@ -471,6 +471,10 @@ export async function searchCards(userQuery: string): Promise<SearchResponse> {
         }),
         recommendations,
         optimizationCopy: buildOptimizationCopy(userQuery, recommendations),
+        meta: {
+          mode: 'live',
+          source: provider,
+        },
       };
     } catch (error) {
       lastError = error;
