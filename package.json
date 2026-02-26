@@ -17,7 +17,8 @@
     "test:watch": "vitest",
     "verify:live": "node scripts/verify-live-search.mjs",
     "eval:dexter40": "tsx scripts/eval-dexter40.ts",
-    "quality:report": "tsx scripts/quality-report.ts"
+    "quality:report": "tsx scripts/quality-report.ts",
+    "demo:coach-core": "tsx scripts/demo-coach-core.ts"
   },
   "dependencies": {
     "next": "^15.1.6",

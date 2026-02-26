@@ -1,0 +1,49 @@
+[
+  {
+    "name": "fast-aggro-sparse",
+    "request": {
+      "contractVersion": "coach-core.v1",
+      "intake": {
+        "objective": "quick attack damage plan",
+        "pace": "fast",
+        "favoriteTypes": ["Fire"]
+      }
+    },
+    "expected": {
+      "mode": "coach",
+      "archetype": "AGGRO_TEMPO",
+      "fallbackReason": null,
+      "planHorizon": "NEXT_7_DAYS"
+    }
+  },
+  {
+    "name": "control-advanced",
+    "request": {
+      "contractVersion": "coach-core.v1",
+      "intake": {
+        "objective": "control draw deny setup",
+        "pace": "control",
+        "experience": "advanced"
+      }
+    },
+    "expected": {
+      "mode": "coach",
+      "archetype": "CONTROL_ENGINE",
+      "fallbackReason": null,
+      "planHorizon": "NEXT_7_DAYS"
+    }
+  },
+  {
+    "name": "missing-critical-input",
+    "request": {
+      "contractVersion": "coach-core.v1",
+      "intake": {}
+    },
+    "expected": {
+      "mode": "fallback",
+      "archetype": null,
+      "fallbackReason": "MISSING_CRITICAL_INPUT",
+      "planHorizon": "NEXT_7_DAYS"
+    }
+  }
+]
