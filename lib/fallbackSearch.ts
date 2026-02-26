@@ -6,7 +6,7 @@ const FALLBACK_RESULTS: NormalizedCard[] = [
   {
     id: 'fallback-sv3-27',
     name: 'Charizard',
-    image: 'https://assets.tcgdex.net/en/sv/sv3/27/high.webp',
+    image: 'https://assets.tcgdex.net/en/swsh/fut2020/1/high.webp',
     setName: 'Obsidian Flames',
     supertype: 'Pokemon',
     types: ['Fire'],
@@ -17,7 +17,7 @@ const FALLBACK_RESULTS: NormalizedCard[] = [
   {
     id: 'fallback-base-4',
     name: 'Blastoise',
-    image: 'https://assets.tcgdex.net/en/base/base/4/high.webp',
+    image: 'https://assets.tcgdex.net/en/base/basep/1/high.webp',
     setName: 'Base',
     supertype: 'Pokemon',
     types: ['Water'],

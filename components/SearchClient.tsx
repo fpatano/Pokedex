@@ -7,9 +7,27 @@ import { shouldApplyResponse } from '@/lib/requestGuard';
 import { applyRecommendationMutation, buildGuidedQuery, createDefaultGuidedBuilderState } from '@/lib/uiState';
 import type { CoachResponse, DecisionCardResponse, NormalizedCard, SearchResponse } from '@/lib/types';
 
+const CARD_FALLBACK_DATA_URL =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='245' height='342' viewBox='0 0 245 342'%3E%3Crect width='245' height='342' fill='%231e293b'/%3E%3Crect x='16' y='16' width='213' height='310' rx='12' fill='%23334155'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23cbd5e1' font-family='Arial' font-size='16'%3EImage unavailable%3C/text%3E%3C/svg%3E";
+
 function CardThumb({ src, alt }: { src: string; alt: string }) {
-  if (!src) return <div className="mb-2 h-44 w-full rounded bg-slate-700" />;
-  return <Image src={src} alt={alt} width={245} height={342} unoptimized className="mb-2 h-auto w-full rounded" />;
+  const [imageSrc, setImageSrc] = useState(src || CARD_FALLBACK_DATA_URL);
+
+  useEffect(() => {
+    setImageSrc(src || CARD_FALLBACK_DATA_URL);
+  }, [src]);
+
+  return (
+    <Image
+      src={imageSrc}
+      alt={alt}
+      width={245}
+      height={342}
+      unoptimized
+      className="mb-2 h-auto w-full rounded"
+      onError={() => setImageSrc(CARD_FALLBACK_DATA_URL)}
+    />
+  );
 }
 
 type CollectionEntry = {
