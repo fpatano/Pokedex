@@ -174,9 +174,9 @@ export default function SearchClient() {
         </section>
       )}
 
-      {data && data.coolPicks.length > 0 && (
+      {data && !hasUserQuery && data.coolPicks.length > 0 && (
         <section className="mt-8">
-          <h2 className="mb-3 text-xl font-semibold">{hasUserQuery ? 'Cool Picks' : 'Cool Picks (default)'}</h2>
+          <h2 className="mb-3 text-xl font-semibold">Cool Picks (default)</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {data.coolPicks.map((card) => (
               <article key={`cool-${card.id}`} className="rounded border border-emerald-500/40 bg-slate-800 p-3">
