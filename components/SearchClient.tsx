@@ -35,7 +35,7 @@ type CollectionEntry = {
   quantity: number;
 };
 
-const DEFAULT_DISCOVERY_QUERY = 'popular pokemon cards';
+const DEFAULT_DISCOVERY_QUERY = 'pikachu';
 const COLLECTION_STORAGE_KEY = 'pokedex.collection.v1';
 
 function readCollectionFromStorage(): CollectionEntry[] {

@@ -178,7 +178,7 @@ describe('SearchClient UI vertical slice', () => {
     render(<SearchClient />);
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith('/api/search?q=popular%20pokemon%20cards', expect.anything());
+      expect(fetchMock).toHaveBeenCalledWith('/api/search?q=pikachu', expect.anything());
       expect(screen.getByText(/Pokédex Search/i)).toBeTruthy();
       expect(screen.getByText(/Search cards/i)).toBeTruthy();
       expect(screen.getByText(/Cool Picks \(default\)/i)).toBeTruthy();

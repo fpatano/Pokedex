@@ -6,7 +6,7 @@ const FALLBACK_RESULTS: NormalizedCard[] = [
   {
     id: 'fallback-sv3-27',
     name: 'Charizard',
-    image: 'https://assets.tcgdex.net/en/swsh/fut2020/1/high.webp',
+    image: 'https://images.pokemontcg.io/base1/4_hires.png',
     setName: 'Obsidian Flames',
     supertype: 'Pokemon',
     types: ['Fire'],
@@ -17,7 +17,7 @@ const FALLBACK_RESULTS: NormalizedCard[] = [
   {
     id: 'fallback-base-4',
     name: 'Blastoise',
-    image: 'https://assets.tcgdex.net/en/base/basep/1/high.webp',
+    image: 'https://images.pokemontcg.io/base1/2_hires.png',
     setName: 'Base',
     supertype: 'Pokemon',
     types: ['Water'],
@@ -28,7 +28,7 @@ const FALLBACK_RESULTS: NormalizedCard[] = [
   {
     id: 'fallback-sv2-52',
     name: 'Pikachu',
-    image: 'https://assets.tcgdex.net/en/sv/sv2/52/high.webp',
+    image: 'https://images.pokemontcg.io/base1/58_hires.png',
     setName: 'Paldea Evolved',
     supertype: 'Pokemon',
     types: ['Lightning'],
@@ -39,7 +39,7 @@ const FALLBACK_RESULTS: NormalizedCard[] = [
   {
     id: 'fallback-sv1-12',
     name: 'Venusaur',
-    image: 'https://assets.tcgdex.net/en/sv/sv1/12/high.webp',
+    image: 'https://images.pokemontcg.io/base1/15_hires.png',
     setName: 'Scarlet & Violet',
     supertype: 'Pokemon',
     types: ['Grass'],
