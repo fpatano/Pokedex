@@ -148,28 +148,11 @@ describe('SearchClient UI vertical slice', () => {
     fireEvent.click(screen.getByRole('button', { name: /disable assist/i }));
     expect(screen.getByText(/OFF: Search runs without collection context/i)).toBeTruthy();
   });
-  it('loads default cool picks on first paint and labels fallback mode', async () => {
+  it('shows error state when search fails instead of treating fallback sample data as success', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
+      ok: false,
       json: async () => ({
-        query: 'popular pokemon cards',
-        results: [],
-        coolPicks: [
-          {
-            id: 'fallback-sv2-52',
-            name: 'Pikachu',
-            image: '',
-            setName: 'Paldea Evolved',
-            supertype: 'Pokemon',
-            types: ['Lightning'],
-            hp: '60',
-            abilityText: undefined,
-            attacks: [{ name: 'Thunder Jolt', damage: '30', text: 'sample' }],
-          },
-        ],
-        recommendations: [],
-        optimizationCopy: [],
-        meta: { mode: 'fallback', message: 'Pokémon service is temporarily unavailable' },
+        error: 'Pokémon service is temporarily unavailable',
       }),
     });
 
@@ -181,8 +164,9 @@ describe('SearchClient UI vertical slice', () => {
       expect(fetchMock).toHaveBeenCalledWith('/api/search?q=pikachu', expect.anything());
       expect(screen.getByText(/Pokédex Search/i)).toBeTruthy();
       expect(screen.getByText(/Search cards/i)).toBeTruthy();
-      expect(screen.getByText(/Cool Picks \(default\)/i)).toBeTruthy();
-      expect(screen.getByText(/Fallback mode/i)).toBeTruthy();
+      expect(screen.getAllByText(/Pokémon service is temporarily unavailable/i).length).toBeGreaterThan(0);
+      expect(screen.queryByText(/Fallback mode/i)).toBeNull();
+      expect(screen.queryByText(/Cool Picks \(default\)/i)).toBeNull();
     });
   });
 
