@@ -4,4 +4,4 @@ decision_trace_id=fa83b3c8f4c672de
 state=TOURNAMENT_READY
 confidence=0.92
 passed=true
-timestamp=2026-02-26T07:06:16.406Z
+timestamp=2026-02-27T14:03:21.181Z

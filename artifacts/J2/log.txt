@@ -4,4 +4,4 @@ decision_trace_id=b9cbd7b3b7c48aff
 state=PLAYABLE_NOW
 confidence=0.76
 passed=true
-timestamp=2026-02-26T07:06:16.383Z
+timestamp=2026-02-27T14:03:21.158Z

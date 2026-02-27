@@ -1,0 +1,22 @@
+
+> pokedex-mvp@0.1.0 test:ui
+> vitest run tests/ui.searchClient.test.tsx
+
+
+ RUN  v3.2.4 /home/tron/.openclaw/workspace/repos/Pokedex
+
+stderr | tests/ui.searchClient.test.tsx > SearchClient UI vertical slice > supports collection CRUD from results and modal with deterministic duplicate increment
+Received `true` for a non-boolean attribute `unoptimized`.
+
+If you want to write it to the DOM, pass a string instead: unoptimized="true" or unoptimized={value.toString()}.
+
+ ✓ tests/ui.searchClient.test.tsx (5 tests) 1348ms
+   ✓ SearchClient UI vertical slice > supports collection CRUD from results and modal with deterministic duplicate increment  488ms
+   ✓ SearchClient UI vertical slice > toggles collection-aware query assist without mutating user input  398ms
+   ✓ SearchClient UI vertical slice > supports guided builder and card detail modal clarity  385ms
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  08:03:58
+   Duration  2.11s (transform 90ms, setup 0ms, collect 164ms, tests 1.35s, environment 248ms, prepare 164ms)
+

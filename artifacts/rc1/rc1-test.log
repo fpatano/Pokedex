@@ -1,0 +1,106 @@
+
+> pokedex-mvp@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.4 /home/tron/.openclaw/workspace/repos/Pokedex
+
+ ✓ tests/recommendations.ruleset.test.ts (3 tests) 13ms
+ ✓ tests/searchRanking.test.ts (3 tests) 13ms
+ ✓ tests/decisionCard.golden.test.ts (2 tests) 8ms
+ ✓ tests/decisionCard.deckSkeleton.golden.test.ts (1 test) 14ms
+ ✓ tests/decisionCard.engine.test.ts (5 tests) 14ms
+ ✓ tests/decisionCard.journeyAcceptance.test.ts (10 tests) 30ms
+ ✓ tests/decisionCard.route.test.ts (4 tests) 29ms
+ ✓ tests/coach.golden.test.ts (2 tests) 9ms
+ ✓ tests/searchCards.intent.test.ts (2 tests) 21ms
+stdout | tests/coach.route.test.ts > /api/coach route (Coach Core M2) > returns 400 for invalid JSON body
+[coach-core] invalid_json { traceId: [32m'no-trace-id'[39m }
+
+stdout | tests/coach.tournament.route.test.ts > /api/coach tournament variant hardening > returns tournament variant header and coach response when enabled
+{"scope":"coach-core","variant":"tournament","event":"tournament_request","timestamp":"2026-02-27T14:03:21.275Z","traceId":"no-trace-id","timeoutMs":1200,"maxRetries":0}
+
+ ✓ tests/contract.ui-backend-state.test.ts (3 tests) 25ms
+stdout | tests/coach.route.test.ts > /api/coach route (Coach Core M2) > returns 400 for invalid request payload
+[coach-core] invalid_contract { traceId: [32m'no-trace-id'[39m }
+
+stdout | tests/coach.tournament.route.test.ts > /api/coach tournament variant hardening > returns tournament variant header and coach response when enabled
+{"scope":"coach-core","variant":"tournament","event":"tournament_success","timestamp":"2026-02-27T14:03:21.279Z","traceId":"no-trace-id","attempt":1,"mode":"coach","confidence":0.57}
+
+stdout | tests/coach.route.test.ts > /api/coach route (Coach Core M2) > returns one coach decision on valid sparse intake
+[coach-core] response {
+  traceId: [32m'no-trace-id'[39m,
+  mode: [32m'coach'[39m,
+  confidence: [33m0.95[39m,
+  confidenceLabel: [32m'high'[39m,
+  missingSingles: [33m0[39m,
+  fallbackReason: [1mnull[22m,
+  archetype: [32m'AGGRO_TEMPO'[39m,
+  variant: [32m'standard'[39m
+}
+
+stdout | tests/coach.route.test.ts > /api/coach route (Coach Core M2) > returns deterministic fallback reason on missing critical input
+[coach-core] response {
+  traceId: [32m'no-trace-id'[39m,
+  mode: [32m'fallback'[39m,
+  confidence: [33m0.3[39m,
+  confidenceLabel: [32m'low'[39m,
+  missingSingles: [33m2[39m,
+  fallbackReason: [32m'MISSING_CRITICAL_INPUT'[39m,
+  archetype: [1mnull[22m,
+  variant: [32m'standard'[39m
+}
+
+stdout | tests/coach.tournament.route.test.ts > /api/coach tournament variant hardening > enforces rate limit in tournament path with strict body + header error class
+{"scope":"coach-core","variant":"tournament","event":"tournament_request","timestamp":"2026-02-27T14:03:21.285Z","traceId":"no-trace-id","timeoutMs":1200,"maxRetries":0}
+
+stdout | tests/coach.tournament.route.test.ts > /api/coach tournament variant hardening > enforces rate limit in tournament path with strict body + header error class
+{"scope":"coach-core","variant":"tournament","event":"tournament_success","timestamp":"2026-02-27T14:03:21.285Z","traceId":"no-trace-id","attempt":1,"mode":"coach","confidence":0.57}
+
+stdout | tests/coach.tournament.route.test.ts > /api/coach tournament variant hardening > enforces rate limit in tournament path with strict body + header error class
+{"scope":"coach-core","variant":"tournament","event":"tournament_rate_limited","timestamp":"2026-02-27T14:03:21.286Z","traceId":"no-trace-id","clientKey":"client-a","errorClass":"rate_limited"}
+
+stdout | tests/coach.tournament.route.test.ts > /api/coach tournament variant hardening > serves cached response for same idempotency key + payload
+{"scope":"coach-core","variant":"tournament","event":"tournament_request","timestamp":"2026-02-27T14:03:21.292Z","traceId":"no-trace-id","timeoutMs":1200,"maxRetries":0}
+
+stdout | tests/coach.tournament.route.test.ts > /api/coach tournament variant hardening > serves cached response for same idempotency key + payload
+{"scope":"coach-core","variant":"tournament","event":"tournament_success","timestamp":"2026-02-27T14:03:21.293Z","traceId":"no-trace-id","attempt":1,"mode":"coach","confidence":0.73}
+
+ ✓ tests/search.route.test.ts (1 test) 21ms
+stdout | tests/coach.tournament.route.test.ts > /api/coach tournament variant hardening > serves cached response for same idempotency key + payload
+{"scope":"coach-core","variant":"tournament","event":"tournament_idempotency_hit","timestamp":"2026-02-27T14:03:21.294Z","traceId":"no-trace-id"}
+
+ ✓ tests/coach.route.test.ts (5 tests) 35ms
+stdout | tests/coach.tournament.route.test.ts > /api/coach tournament variant hardening > maps tournament availability failures to strict INVALID_REQUEST body + 503 + header class
+{"scope":"coach-core","variant":"tournament","event":"tournament_request","timestamp":"2026-02-27T14:03:21.297Z","traceId":"no-trace-id","timeoutMs":1200,"maxRetries":0}
+{"scope":"coach-core","variant":"tournament","event":"tournament_failure","timestamp":"2026-02-27T14:03:21.298Z","traceId":"no-trace-id","reason":"forced failure","errorClass":"tournament_unavailable"}
+
+ ✓ tests/metadataPipeline.test.ts (4 tests) 21ms
+ ✓ tests/coach.tournament.route.test.ts (4 tests) 38ms
+ ✓ tests/coach.runtime.test.ts (3 tests) 6ms
+ ✓ tests/coach.trust.test.ts (4 tests) 7ms
+ ✓ tests/coach.contract.test.ts (6 tests) 16ms
+ ✓ tests/coach.trust.integration.test.ts (1 test) 6ms
+ ✓ tests/apiShape.test.ts (1 test) 5ms
+ ✓ tests/coolPicks.test.ts (2 tests) 5ms
+ ✓ tests/queryParser.test.ts (3 tests) 5ms
+ ✓ tests/providerPolicy.test.ts (5 tests) 6ms
+ ✓ tests/requestGuard.test.ts (2 tests) 4ms
+ ✓ tests/decisionCard.contract.test.ts (4 tests) 10ms
+ ✓ tests/tcgdexImageResolver.test.ts (5 tests) 10ms
+ ✓ tests/searchError.test.ts (2 tests) 3ms
+stderr | tests/ui.searchClient.test.tsx > SearchClient UI vertical slice > supports collection CRUD from results and modal with deterministic duplicate increment
+Received `true` for a non-boolean attribute `unoptimized`.
+
+If you want to write it to the DOM, pass a string instead: unoptimized="true" or unoptimized={value.toString()}.
+
+ ✓ tests/ui.searchClient.test.tsx (5 tests) 1342ms
+   ✓ SearchClient UI vertical slice > supports collection CRUD from results and modal with deterministic duplicate increment  486ms
+   ✓ SearchClient UI vertical slice > toggles collection-aware query assist without mutating user input  399ms
+   ✓ SearchClient UI vertical slice > supports guided builder and card detail modal clarity  386ms
+
+ Test Files  27 passed (27)
+      Tests  92 passed (92)
+   Start at  08:03:20
+   Duration  2.87s (transform 1.41s, setup 0ms, collect 3.74s, tests 1.72s, environment 814ms, prepare 6.15s)
+
